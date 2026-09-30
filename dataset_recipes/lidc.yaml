@@ -1,0 +1,135 @@
+dataset:
+  dataset_id: LIDC
+  disease_display_zh_en: 肺结节 / pulmonary nodule
+  release: lidc_purevision_r60_20260830_v1
+  source_root: /datasets/LIDC
+  label_provenance_zh: LIDC-IDRI 放射科医师 XML 轮廓和表型评分；解剖标签来自 TotalSegmentator 2.18.0 伪标签。
+source:
+  format: csv
+  manifest: metadata.csv
+  split_manifest: splits.json
+  patient_field: patient_id
+  image_field: image_path
+  lesion_mask_field: nodule_mask_path
+  split_from_patient_lists: true
+anatomy:
+  mask_encoding: class_id
+  lesion_labels: [left_lung_pulmonary_nodule, right_lung_pulmonary_nodule]
+  choices_source:
+    kind: alignment_config
+    path: configs/05_alignment.yaml
+    group: anatomy
+    display_zh_en:
+      outside_body: 体外 / outside body
+      left_lung: 左肺 / left lung
+      right_lung: 右肺 / right lung
+      vessel: 肺血管 / pulmonary vessel
+      heart: 心脏 / heart
+      bone: 骨 / bone
+      peripheral_soft_tissue: 外周软组织 / peripheral soft tissue
+      left_lung_pulmonary_nodule: 左肺肺结节 / left-lung pulmonary nodule
+      right_lung_pulmonary_nodule: 右肺肺结节 / right-lung pulmonary nodule
+phenotypes:
+  - id: density
+    display_zh_en: 密度 / density
+    question_zh_en: 此肺结节的密度属于哪一类？ / What is the density category of this pulmonary nodule?
+    kind: ordinal
+    source_field: texture_native_score
+    cut_points: [2.5, 4.5]
+    choices_source:
+      kind: alignment_config
+      path: configs/05_alignment.yaml
+      group: density
+      display_zh_en:
+        non_solid_or_mostly_non_solid: 非实性或以非实性为主 / non-solid or mostly non-solid
+        mixed_or_mostly_solid: 混合或以实性为主 / mixed or mostly solid
+        solid: 实性 / solid
+  - id: sphericity
+    display_zh_en: 球形度 / sphericity
+    question_zh_en: 此肺结节的球形度属于哪一类？ / What is the sphericity category of this pulmonary nodule?
+    kind: ordinal
+    source_field: sphericity_native_score
+    cut_points: [2.5, 3.5, 4.5]
+    choices_source:
+      kind: alignment_config
+      path: configs/05_alignment.yaml
+      group: sphericity
+      display_zh_en:
+        linear_or_mostly_linear: 线形或以线形为主 / linear or mostly linear
+        ovoid: 卵圆形 / ovoid
+        mostly_round: 近圆形 / mostly round
+        round: 圆形 / round
+  - id: margin
+    display_zh_en: 边缘 / margin
+    question_zh_en: 此肺结节的边缘属于哪一类？ / What is the margin category of this pulmonary nodule?
+    kind: ordinal
+    source_field: margin_native_score
+    cut_points: [1.5, 2.5, 3.5, 4.5]
+    choices_source:
+      kind: alignment_config
+      path: configs/05_alignment.yaml
+      group: margin
+      display_zh_en:
+        poorly_defined: 边界不清 / poorly defined
+        near_poorly_defined: 较不清晰 / nearly poorly defined
+        medium_margin: 中等清晰 / intermediate margin
+        near_sharp: 较清晰 / nearly sharp
+        sharp: 清晰 / sharp
+  - id: lobulation
+    display_zh_en: 分叶 / lobulation
+    question_zh_en: 此肺结节是否存在分叶？ / Is this pulmonary nodule lobulated?
+    kind: ordinal
+    source_field: lobulation_native_score
+    cut_points: [1.5]
+    choices_source:
+      kind: alignment_config
+      path: configs/05_alignment.yaml
+      group: lobulation
+      display_zh_en:
+        absent: 无分叶 / no lobulation
+        present: 有分叶 / lobulation
+  - id: spiculation
+    display_zh_en: 毛刺 / spiculation
+    question_zh_en: 此肺结节是否存在毛刺？ / Is this pulmonary nodule spiculated?
+    kind: ordinal
+    source_field: spiculation_native_score
+    cut_points: [1.5]
+    choices_source:
+      kind: alignment_config
+      path: configs/05_alignment.yaml
+      group: spiculation
+      display_zh_en:
+        absent: 无毛刺 / no spiculation
+        present: 有毛刺 / spiculation
+  - id: calcification
+    display_zh_en: 钙化 / calcification
+    question_zh_en: 此肺结节是否存在钙化？ / Is calcification present in this pulmonary nodule?
+    kind: categorical
+    source_field: calcification_native_score
+    value_groups: [[6], [1, 2, 3, 4, 5]]
+    choices_source:
+      kind: alignment_config
+      path: configs/05_alignment.yaml
+      group: calcification
+      display_zh_en:
+        absent: 无钙化 / no calcification
+        present: 有钙化 / calcification
+  - id: size
+    display_zh_en: 大小 / size
+    question_zh_en: 此肺结节的大小属于哪一类？ / What is the size category of this pulmonary nodule?
+    kind: continuous
+    source_field: diameter_mm_mean
+    cut_points: [6.0, 10.0]
+    choices_source:
+      kind: alignment_config
+      path: configs/05_alignment.yaml
+      group: size
+      display_zh_en:
+        3_to_6_mm: 3 至 6 毫米 / 3 to 6 mm
+        6_to_10_mm: 6 至 10 毫米 / 6 to 10 mm
+        greater_than_10_mm: 大于 10 毫米 / greater than 10 mm
+grounding:
+  grid_size: 4
+  require_single_cell: true
+  lesion_mask_role: ground_truth
+construction_stage_zh: 全幅 DICOM 重建与患者级划分；此步骤不进行模型推理、mask 条件池化、监督质心评估、零样本分类或 t-SNE 可视化。

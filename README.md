@@ -1,6 +1,8 @@
-# PureVision：LIDC-IDRI 实例代码
+# PureVision：LIDC-IDRI 实例与跨数据集构造接口
 
 本仓库提供 PureVision 在 LIDC-IDRI 肺结节 (pulmonary nodule) 数据集上的代码实例。内容覆盖 PureEyes 的局部病灶表型训练、整图表型训练、解剖训练，以及 PureNeurons 的共享语义对齐、病灶 patch 选择、软语义融合和冻结 MedGemma 1.5 解码。它是单一数据集、单一 backbone 的实例，不包含论文另外两个数据集和其他医学 VLM 的完整实验实现。
+
+现已加入 CBIS-DDSM 乳腺病灶 (breast lesion) 与 3DReasonKnee 内侧半月板 (medial meniscus) 的数据构造配方和数据集自带类别规范。共享推理、报告解析及评测从构造后的 `dataset_contract.json` 读取解剖和表型维度，并核对对齐 checkpoint 的候选顺序；不会把三个数据集的类别写在共享推理代码里。原有完整训练仍是 LIDC 专用，不能把新的配方视为 CBIS/膝关节已完成三阶段训练。完整构造方法、服务器冻结清单哈希和论文差异见 [DATA_CONSTRUCTION_ZH.md](DATA_CONSTRUCTION_ZH.md)。
 
 仓库附带一例真实、去标识的 LIDC-IDRI 测试图像及结节 mask，可运行原生 MedGemma 1.5 与 PureVision 的配对测试。测试病例的图像、mask、冻结标签和既有生成记录位于 [`examples/lidc_case_0079/`](examples/lidc_case_0079/)。图像和 mask 供核验与离线评估；推理脚本不会把 mask 输入模型。
 
@@ -74,10 +76,11 @@ CUDA_VISIBLE_DEVICES=1 PYTHONPATH=src python scripts/run_real_case.py \
 输出包括 `native_result_zh.json`、`purevision_result_zh.json`、`raw_patch_embeddings.pt` 和 `SUMMARY_ZH.json`。原生分支使用 MedGemma 1.5 原始预训练权重的标准未修改推理；PureVision 分支加载冻结的双塔和共享对齐器。原始双塔特征在共享对齐器之前保存，供复核。仓库附带的 [`SUMMARY_ZH.json`](examples/lidc_case_0079/SUMMARY_ZH.json) 和两份 `*_result_zh.json` 是 2026-09-30 使用仓库内图像完成的真实运行记录。mask 阳性像素分别落在 `r3c3` 66 个、`r4c3` 145 个，因此单格筛选为 `false`。原始特征二进制未纳入代码仓库，其 SHA-256 已写在结果记录中。
 
 该病例只是一例功能测试。此前运行中，PureVision 的解剖侧别 (anatomical side)、密度 (density)、毛刺 (spiculation) 和钙化 (calcification) 与冻结标签一致；球形度 (sphericity)、边缘 (margin)、分叶 (lobulation) 与大小 (size) 不一致。它不代表论文报告的 VQA 或 RRG 总体准确率。
+当前脚本的新提问会明确要求 4×4 单元；仓库内 2026-09-30 的历史生成结果保持原样，使用的是旧提问文本，不能将两轮输出当作同一次无条件配对实验。
 
 ## GPT6-Astra 报告解析
 
-[`src/purevision/rrg_parser.py`](src/purevision/rrg_parser.py) 使用 GPT6-Astra 的 Responses API 结构化输出，将自由文本报告映射到固定的 4×4 网格和 LIDC-IDRI 七组表型机器 ID。候选 ID 来自 `configs/05_alignment.yaml`；缺失、冲突或无效字段返回 `null`。解析器仅抽取标签，评分需用冻结参考和确定性指标另行计算。
+[`src/purevision/rrg_parser.py`](src/purevision/rrg_parser.py) 使用 GPT6-Astra 的 Responses API 结构化输出，将自由文本报告映射到固定的 4×4 网格和数据集自带的表型机器 ID。历史 LIDC 实例仍可从 `configs/05_alignment.yaml` 读取词表；三数据集统一入口改用 `--dataset-contract`。缺失、冲突或无效字段返回 `null`。解析器仅抽取标签，评分由冻结参考和确定性指标另行计算。
 
 只验证仓库附带的既有生成报告时，无需下载 MedGemma 权重。安装 API 客户端后，在自己的环境中设置密钥，仓库中不填写密钥：
 
@@ -95,4 +98,4 @@ PowerShell 中设置密钥：`$env:OPENAI_API_KEY = 'your-api-key'`。模块记�
 
 ## 复现范围
 
-本仓库不包含 CBIS-DDSM、3DReasonKnee、多 backbone、论文 2,600 VQA/583 RRG 完整 benchmark、其他方法对照、GPT6-Astra 历史解析输出或论文图表的生成资产。提供的真实病例可核验代码链路，不能替代论文表格数值复现。所有实验协议与结果文件应固定数据集 ID、release、源根目录、标签来源以及 train/validation/test 清单和哈希。
+本仓库包含 CBIS-DDSM、3DReasonKnee 的构造代码、类别规范和可复算的评测构造/评分入口，但不包含其数据、训练 checkpoint、完整三阶段训练、多 backbone、论文原始 2,600 VQA/583 RRG 题目、其他方法对照或 GPT6-Astra 历史解析输出。提供的真实 LIDC 病例只能核验代码链路，不能替代论文表格数值复现。每份实验协议与结果文件都应固定数据集 ID、release、源根目录、标签来源以及 train/validation/test 清单和哈希。

@@ -17,7 +17,8 @@ from purevision.protocol import sha256_file, validate_dataset_protocol
 ROOT = Path(__file__).resolve().parents[1]
 CASE_PATH = ROOT / "examples" / "lidc_case_0079" / "case_zh.json"
 INSTRUCTION = (
-    "Identify the pulmonary nodule location and describe density, sphericity, "
+    "Divide the image into a 4x4 grid, numbered from top to bottom and left to right. "
+    "State the pulmonary nodule grid cell explicitly as r1c1 through r4c4, then describe density, sphericity, "
     "margin, lobulation, spiculation, calcification, and size."
 )
 

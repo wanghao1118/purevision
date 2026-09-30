@@ -8,6 +8,7 @@ import os
 import sys
 import time
 import traceback
+from collections import Counter
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -67,6 +68,13 @@ METADATA_FIELDS = (
     "margin_level",
     "lobulation_level",
     "spiculation_level",
+    "texture_native_score",
+    "sphericity_native_score",
+    "margin_native_score",
+    "lobulation_native_score",
+    "spiculation_native_score",
+    "calcification_native_score",
+    "preprocessing_mode",
 )
 
 SCAN_FIELDS = (
@@ -128,11 +136,23 @@ def annotation_statistics(annotations: list[Any]) -> dict[str, Any]:
         "volume_mm3_mean": float(np.mean([a.volume for a in annotations])),
     }
     for feature in SEMANTIC_FEATURES:
+        scores = [int(getattr(annotation, feature)) for annotation in annotations]
         row[f"{feature}_mean"] = float(
-            np.mean([getattr(annotation, feature) for annotation in annotations])
+            np.mean(scores)
+        )
+        counts = Counter(scores)
+        maximum = max(counts.values())
+        median = float(np.median(scores))
+        row[f"{feature}_native_score"] = min(
+            (score for score, count in counts.items() if count == maximum),
+            key=lambda score: (abs(score - median), score),
         )
     calcification_codes = [int(annotation.calcification) for annotation in annotations]
     row["calcification_mean"] = float(np.mean(calcification_codes))
+    counts = Counter(calcification_codes)
+    maximum = max(counts.values())
+    candidates = [score for score, count in counts.items() if count == maximum]
+    row["calcification_native_score"] = 6 if 6 in candidates else min(candidates)
 
 
     row["calcification_group"] = majority_calcification_group(calcification_codes)
@@ -417,6 +437,7 @@ def main() -> int:
                         "roi_row_stop": r1,
                         "roi_col_start": c0,
                         "roi_col_stop": c1,
+                        "preprocessing_mode": "lung_crop_legacy",
                         **statistics,
                     }
                 )

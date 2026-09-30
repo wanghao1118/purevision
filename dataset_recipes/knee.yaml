@@ -1,0 +1,51 @@
+dataset:
+  dataset_id: 3DReasonKnee
+  disease_display_zh_en: 半月板损伤 / meniscal injury
+  release: medial_meniscus_strict2d_crop128_v4
+  source_root: /datasets/3dreasonknee
+  label_provenance_zh: 单切片来自 OAI 膝关节 MRI；MOAKS 内侧半月板外突等级继承检查级区域标签，非逐切片专家复核；解剖掩码以人工优先并使用未专家复核的模型伪标签补充。
+source:
+  format: jsonl
+  manifest: manifest/all.jsonl
+  split_manifest: manifest/all.jsonl
+  patient_field: patient_id
+  split_field: split
+  image_field: image_path
+  anatomy_mask_field: anatomy_mask_path
+  lesion_proxy_field: lesion_roi_proxy_path
+anatomy:
+  mask_encoding: independent_channel_bitset
+  lesion_labels: [medial_meniscus]
+  choices_source:
+    kind: knee_anatomy
+    path: anatomy_labels.json
+    display_zh_en:
+      femur: 股骨 / femur
+      tibia: 胫骨 / tibia
+      patella: 髌骨 / patella
+      femur_cartilage: 股骨软骨 / femoral cartilage
+      tibia_cartilage: 胫骨软骨 / tibial cartilage
+      patella_cartilage: 髌骨软骨 / patellar cartilage
+      lateral_meniscus: 外侧半月板 / lateral meniscus
+      medial_meniscus: 内侧半月板 / medial meniscus
+phenotypes:
+  - id: medial_meniscus_medial_extrusion
+    display_zh_en: 内侧半月板内侧外突等级 / medial meniscus medial extrusion grade
+    question_zh_en: 此膝关节 MRI 的内侧半月板内侧外突 MOAKS 等级是什么？ / What is the MOAKS medial extrusion grade of the medial meniscus in this knee MRI?
+    kind: ordinal
+    source_field: dimensions.medial_meniscus_medial_extrusion.label
+    choices_source:
+      kind: knee_dimension
+      path: dimensions.json
+      group: medial_meniscus_medial_extrusion
+      display_zh_en:
+        grade_0: 0 级，小于 2 毫米 / grade 0, less than 2 mm
+        grade_1: 1 级，2 至 3 毫米 / grade 1, 2 to 3 mm
+        grade_2: 2 级，3 至 4.9 毫米 / grade 2, 3 to 4.9 mm
+        grade_3: 3 级，至少 5 毫米 / grade 3, at least 5 mm
+grounding:
+  grid_size: 4
+  require_single_cell: true
+  lesion_mask_role: proxy_whole_medial_meniscus_not_extrusion
+  benchmark_grounding_eligible: false
+construction_stage_zh: 2D 单切片原生几何裁剪并保留独立解剖 bitset；不存在经过专家复核的外突病灶 mask，代理 ROI 不能用于正式 grounding。此步骤不进行标准原生模型推理、mask 条件池化、监督质心评估、零样本分类或 t-SNE 可视化。

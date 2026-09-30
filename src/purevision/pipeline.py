@@ -15,6 +15,7 @@ from .alignment import (
 )
 from .anatomy_model import load_anatomy_patch_encoder
 from .decoder import FrozenMedGemmaDecoder
+from .dataset_contract import load_contract, validate_target_bank
 from .model import load_trained_model
 from .semantic_fusion import (
     FusionResult,
@@ -80,6 +81,8 @@ class PureVisionPipeline:
         paths = config["paths"]
         runtime = config.get("runtime", {})
         inference = config["inference"]
+        contract_path = paths.get("dataset_contract")
+        self.dataset_contract = load_contract(contract_path) if contract_path else None
         if not bool(inference.get("native_visual_tokens_retained", False)):
             raise ValueError("the paper requires retention of native visual tokens")
         if bool(inference.get("inference_masks", False)):
@@ -96,7 +99,8 @@ class PureVisionPipeline:
         self.phenotype_encoder = load_trained_model(
             model_path,
             paths["phenotype_checkpoint"],
-            int(inference.get("phenotype_target_dimension", 14)),
+            2 * len(self.dataset_contract["phenotypes"])
+            if self.dataset_contract else int(inference.get("phenotype_target_dimension", 14)),
             dtype=self.dtype,
         ).to(self.device)
         self.anatomy_encoder = load_anatomy_patch_encoder(
@@ -113,6 +117,11 @@ class PureVisionPipeline:
         self.target_bank = load_alignment_target_bank(
             paths["alignment_checkpoint"], device=self.device
         )
+        if self.dataset_contract:
+            validate_target_bank(
+                self.dataset_contract,
+                {group.name: group.labels for group in self.target_bank.groups},
+            )
         self.decoder = FrozenMedGemmaDecoder(
             model_path,
             device=self.device,
@@ -138,10 +147,16 @@ class PureVisionPipeline:
         )
         self.anatomy_group = str(inference.get("anatomy_group", "anatomy"))
         self.phenotype_groups = tuple(
-            str(value) for value in inference["phenotype_groups"]
+            str(value) for value in (
+                [item["id"] for item in self.dataset_contract["phenotypes"]]
+                if self.dataset_contract else inference["phenotype_groups"]
+            )
         )
         self.lesion_labels = tuple(
-            str(value) for value in inference["lesion_anatomy_labels"]
+            str(value) for value in (
+                self.dataset_contract["anatomy"]["lesion_labels"]
+                if self.dataset_contract else inference["lesion_anatomy_labels"]
+            )
         )
 
     def _autocast(self):

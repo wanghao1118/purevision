@@ -1,0 +1,101 @@
+dataset:
+  dataset_id: CBIS-DDSM
+  disease_display_zh_en: 乳腺病灶 / breast lesion
+  release: cbis_native_four_part_v2_20260918
+  source_root: /mnt/sda/hao/wh/datasets/CBIS-DDSM
+  label_provenance_zh: 病灶 ROI 来自 CBIS-DDSM 原始 DICOM；乳腺组织来自种子化 GrabCut，胸肌来自冻结 Attention U-Net 伪标签；表型来自源 CSV 结构化字段，多值保留组合。
+source:
+  format: jsonl
+  manifest: manifest.jsonl
+  split_manifest: manifest.jsonl
+  patient_field: patient_id
+  split_field: split
+  image_template: cases/{sample_id}/image.png
+  lesion_mask_template: cases/{sample_id}/lesion_mask.png
+  anatomy_mask_template: cases/{sample_id}/anatomy_mask.png
+anatomy:
+  mask_encoding: class_id
+  lesion_labels: [breast_lesion]
+  choices:
+    - {id: background, text: Background, display_zh_en: 体外背景 / background, mask_value: 0}
+    - {id: breast_tissue, text: Breast tissue, display_zh_en: 乳腺组织 / breast tissue, mask_value: 1}
+    - {id: pectoral_muscle, text: Pectoral muscle, display_zh_en: 胸肌 / pectoral muscle, mask_value: 2}
+    - {id: breast_lesion, text: Breast lesion, display_zh_en: 乳腺病灶 / breast lesion, mask_source: lesion_mask}
+phenotypes:
+  - id: mass_shape
+    display_zh_en: 肿块形态 / mass shape
+    question_zh_en: 此乳腺肿块的形态标注是什么？ / What is the annotated shape of this breast mass?
+    kind: categorical
+    source_field: source_labels.multilabel.mass_shape
+    choices_source:
+      kind: observed_multilabel
+      path: manifest.jsonl
+      group: mass_shape
+      labels: [ROUND, OVAL, LOBULATED, IRREGULAR, ARCHITECTURAL_DISTORTION, ASYMMETRIC_BREAST_TISSUE, LYMPH_NODE, FOCAL_ASYMMETRIC_DENSITY]
+      text_zh:
+        ROUND: 圆形
+        OVAL: 卵圆形
+        LOBULATED: 分叶形
+        IRREGULAR: 不规则形
+        ARCHITECTURAL_DISTORTION: 结构扭曲
+        ASYMMETRIC_BREAST_TISSUE: 不对称乳腺组织
+        LYMPH_NODE: 淋巴结
+        FOCAL_ASYMMETRIC_DENSITY: 局灶不对称密度
+      text_en:
+        ROUND: round
+        OVAL: oval
+        LOBULATED: lobulated
+        IRREGULAR: irregular
+        ARCHITECTURAL_DISTORTION: architectural distortion
+        ASYMMETRIC_BREAST_TISSUE: asymmetric breast tissue
+        LYMPH_NODE: lymph node
+        FOCAL_ASYMMETRIC_DENSITY: focal asymmetric density
+  - id: mass_margins
+    display_zh_en: 肿块边缘 / mass margins
+    question_zh_en: 此乳腺肿块的边缘标注是什么？ / What is the annotated margin of this breast mass?
+    kind: categorical
+    source_field: source_labels.multilabel.mass_margins
+    choices_source:
+      kind: observed_multilabel
+      path: manifest.jsonl
+      group: mass_margins
+      labels: [CIRCUMSCRIBED, ILL_DEFINED, OBSCURED, MICROLOBULATED, SPICULATED]
+      text_zh:
+        CIRCUMSCRIBED: 边界清楚
+        ILL_DEFINED: 边界不清
+        OBSCURED: 遮蔽
+        MICROLOBULATED: 微分叶
+        SPICULATED: 毛刺
+      text_en:
+        CIRCUMSCRIBED: circumscribed
+        ILL_DEFINED: ill-defined
+        OBSCURED: obscured
+        MICROLOBULATED: microlobulated
+        SPICULATED: spiculated
+  - id: calcification_distribution
+    display_zh_en: 钙化分布 / calcification distribution
+    question_zh_en: 此乳腺钙化的分布标注是什么？ / What is the annotated distribution of these breast calcifications?
+    kind: categorical
+    source_field: source_labels.multilabel.calcification_distribution
+    choices_source:
+      kind: observed_multilabel
+      path: manifest.jsonl
+      group: calcification_distribution
+      labels: [CLUSTERED, LINEAR, REGIONAL, DIFFUSELY_SCATTERED, SEGMENTAL]
+      text_zh:
+        CLUSTERED: 簇状
+        LINEAR: 线状
+        REGIONAL: 区域性
+        DIFFUSELY_SCATTERED: 弥漫散在
+        SEGMENTAL: 节段性
+      text_en:
+        CLUSTERED: clustered
+        LINEAR: linear
+        REGIONAL: regional
+        DIFFUSELY_SCATTERED: diffusely scattered
+        SEGMENTAL: segmental
+grounding:
+  grid_size: 4
+  require_single_cell: true
+  lesion_mask_role: source_roi
+construction_stage_zh: 源 DICOM 与 ROI 唯一匹配、原生分辨率重建、GrabCut 乳腺掩码及胸肌伪标签；不进行标准原生模型推理、mask 条件池化、监督质心评估、零样本分类或 t-SNE 可视化。

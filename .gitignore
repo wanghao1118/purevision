@@ -15,6 +15,11 @@ cache/
 *.npz
 *.csv
 *.dcm
+*.jsonl
+*.h5
+*.hdf5
+*.tif
+*.tiff
 *.nii
 *.nii.gz
 *.png

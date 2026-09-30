@@ -33,10 +33,30 @@ display_names_zh_en:
     size: 大小 / size
 
 paths:
-  model: /autodl-tmp/wh/mebe/weights/pretrained/medgemma-1.5-4b-it
-  phenotype_checkpoint: /autodl-tmp/wh/mebe/purevision/runs/phenotype_global/best.pt
-  anatomy_checkpoint: /autodl-tmp/wh/mebe/purevision/runs/anatomy_final/best.pt
-  alignment_checkpoint: /autodl-tmp/wh/mebe/purevision/runs/alignment/best.pt
+  model: /root/autodl-tmp/wh/mebe/weights/pretrained/medgemma-1.5-4b-it
+  phenotype_checkpoint: /root/autodl-tmp/wh/mebe/weights/trained/runs/r30_global_attribute_training/formal_lr5e7_30e/checkpoints/window_026_030_best.pt
+  anatomy_checkpoint: /root/autodl-tmp/wh/mebe/weights/trained/runs/r39_vessel_lung/selected_r39_vessel_lung.pt
+  alignment_checkpoint: /root/autodl-tmp/wh/mebe/weights/trained/runs/r43_patch_text_alignment/selected_r43_shared_alignment.pt
+
+weights:
+  backbone_id: google/medgemma-1.5-4b-it
+  backbone_release: hf_snapshot_91850547d9f0b2fdd21aa7c5f4f3d1a8a52c243b
+  files:
+    - role: backbone_config
+      path: /root/autodl-tmp/wh/mebe/weights/pretrained/medgemma-1.5-4b-it/config.json
+      sha256: 300c724c2c1fcdea39f1e21865cb1b14a605f1e3bb5ef50550faaa48da944fc8
+    - role: backbone_index
+      path: /root/autodl-tmp/wh/mebe/weights/pretrained/medgemma-1.5-4b-it/model.safetensors.index.json
+      sha256: 77f4b67de084c31c7bcd373b039908108eee6c6181607e6d53da730e5f0bc659
+    - role: phenotype_checkpoint
+      path: /root/autodl-tmp/wh/mebe/weights/trained/runs/r30_global_attribute_training/formal_lr5e7_30e/checkpoints/window_026_030_best.pt
+      sha256: 1a98f1d86f39b7b817b13aa41afddd2816bf7f20e892925456fcc1a245557ce7
+    - role: anatomy_checkpoint
+      path: /root/autodl-tmp/wh/mebe/weights/trained/runs/r39_vessel_lung/selected_r39_vessel_lung.pt
+      sha256: c8df713fcd87f2f208bc79a187379bd6d552d0df07008587690bae584cd45f58
+    - role: alignment_checkpoint
+      path: /root/autodl-tmp/wh/mebe/weights/trained/runs/r43_patch_text_alignment/selected_r43_shared_alignment.pt
+      sha256: 49011aedeb9f364f348ca82902a83127efc795747dcf5287f11c1afa7dcaac59
 
 runtime:
   device: cuda:0

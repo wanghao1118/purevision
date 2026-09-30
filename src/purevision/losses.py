@@ -299,7 +299,7 @@ def attribute_relation_losses(
             weights[labels][:, None] * weights[candidate_labels][None, :]
         )
         pair_weights = pair_weights * valid
-    pair_errors = F.smooth_l1_loss(learned, desired, reduction="none")
+    pair_errors = 2.0 * F.smooth_l1_loss(learned, desired, reduction="none")
     distance_loss = (pair_errors * pair_weights).sum() / pair_weights.sum().clamp_min(
         1e-6
     )
@@ -393,7 +393,7 @@ def continuous_attribute_relation_loss(
     if not bool(valid.any()):
         return embeddings.sum() * 0.0
 
-    return F.smooth_l1_loss(learned[valid], desired[valid], reduction="mean")
+    return 2.0 * F.smooth_l1_loss(learned[valid], desired[valid], reduction="mean")
 
 
 def learnable_center_losses(

@@ -7,14 +7,16 @@ from pathlib import Path
 
 import yaml
 
+from purevision.dataset_contract import display_catalog, label_groups, load_contract
 from purevision.protocol import sha256_file, validate_dataset_protocol
 from purevision.rrg_parser import label_groups_from_config, parse_rrg_report
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="使用 GPT6-Astra 将自由文本放射学报告解析为固定标签")
-    parser.add_argument("--config", required=True, type=Path)
-    parser.add_argument("--label-config", required=True, type=Path)
+    parser.add_argument("--config", type=Path)
+    parser.add_argument("--label-config", type=Path)
+    parser.add_argument("--dataset-contract", type=Path)
     parser.add_argument("--result-json", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--model", default="gpt-6-astra")
@@ -23,9 +25,13 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    config = yaml.safe_load(args.config.read_text(encoding="utf-8"))
-    label_config = yaml.safe_load(args.label_config.read_text(encoding="utf-8"))
-    dataset = validate_dataset_protocol(config)
+    config = yaml.safe_load(args.config.read_text(encoding="utf-8")) if args.config else None
+    if not args.dataset_contract and not args.label_config:
+        raise ValueError("必须提供 --dataset-contract 或 --label-config")
+    if config is None and not args.dataset_contract:
+        raise ValueError("旧标签配置模式需要 --config")
+    contract = load_contract(args.dataset_contract) if args.dataset_contract else None
+    dataset = validate_dataset_protocol(config) if config else contract["dataset"]
     source = json.loads(args.result_json.read_text(encoding="utf-8"))
     for field, expected in (
         ("dataset_id", dataset["dataset_id"]),
@@ -34,14 +40,22 @@ def main() -> int:
     ):
         if source.get(field) != expected:
             raise ValueError(f"输入结果的 {field} 与固定数据协议不一致")
-    names = tuple(config["inference"]["phenotype_groups"])
-    groups = label_groups_from_config(label_config, names)
+    if contract:
+        if contract["dataset"]["dataset_id"] != dataset["dataset_id"]:
+            raise ValueError("数据集规范与结果的数据集 ID 不一致")
+        if contract["dataset"]["split_manifest_sha256"] != dataset["split_manifest_sha256"]:
+            raise ValueError("数据集规范与结果的划分哈希不一致")
+        groups = {name: values for name, values in label_groups(contract).items() if name != "anatomy"}
+    else:
+        label_config = yaml.safe_load(args.label_config.read_text(encoding="utf-8"))
+        names = tuple(config["inference"]["phenotype_groups"])
+        groups = label_groups_from_config(label_config, names)
     report = str(source["generated_text"])
     parsed = parse_rrg_report(report, groups, model=args.model)
     output = {
         "schema_version": 1,
         "记录类型": "GPT6-Astra 自由文本报告结构化解析结果",
-        "实验编号": config["experiment_id"],
+        "实验编号": config["experiment_id"] if config else source.get("experiment_id"),
         "dataset_id": dataset["dataset_id"],
         "dataset_release": dataset["release"],
         "source_root": dataset["source_root"],
@@ -50,7 +64,7 @@ def main() -> int:
         "split_manifest_sha256": dataset["split_manifest_sha256"],
         "sample_id": source.get("sample_id"),
         "sample_split": source.get("sample_split"),
-        "类别中英对照": config.get("display_names_zh_en"),
+        "类别中英对照": display_catalog(contract) if contract else config.get("display_names_zh_en"),
         "source_result_sha256": sha256_file(args.result_json),
         "report_sha256": hashlib.sha256(report.encode("utf-8")).hexdigest(),
         "解析说明": "只提取报告明示的 4x4 网格及固定表型标签；null 和无效字段在后续确定性评分中计为错误。本模块不直接评分。",

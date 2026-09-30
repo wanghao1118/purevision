@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import torch
 import yaml
@@ -11,6 +12,7 @@ from purevision.losses import (
 )
 from purevision.protocol import validate_dataset_protocol
 from purevision.protocol import validate_weight_protocol
+from purevision.preprocess import annotation_statistics
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,8 +45,22 @@ def test_continuous_size_geometry_matches_equation() -> None:
         distance_scale=1.5,
     )
     learned = torch.sqrt(torch.tensor(2.0))
-    expected = torch.nn.functional.smooth_l1_loss(learned, torch.tensor(1.5))
+    expected = 2.0 * torch.nn.functional.smooth_l1_loss(learned, torch.tensor(1.5))
     assert torch.allclose(loss, expected)
+
+
+def test_native_reader_scores_are_kept_for_full_fov_reconstruction() -> None:
+    annotations = [
+        SimpleNamespace(
+            diameter=5.0, surface_area=10.0, volume=20.0,
+            texture=score, sphericity=score, margin=score,
+            lobulation=score, spiculation=score, calcification=calc,
+        )
+        for score, calc in ((1, 1), (2, 6), (3, 1), (4, 6))
+    ]
+    row = annotation_statistics(annotations)
+    assert row["texture_native_score"] == 2
+    assert row["calcification_native_score"] == 6
 
 
 def test_categorical_geometry_has_no_ordinal_rank_term() -> None:
@@ -102,6 +118,13 @@ def test_training_and_inference_configs_match_paper_constants() -> None:
     assert alignment["training"]["epochs"] == 30
 
     inference_config = inference["inference"]
+    validate_weight_protocol(
+        inference,
+        required_roles=(
+            "backbone_config", "backbone_index", "phenotype_checkpoint",
+            "anatomy_checkpoint", "alignment_checkpoint",
+        ),
+    )
     assert inference_config["window_size"] == 5
     assert inference_config["selected_patches"] == 8
     assert inference_config["semantic_temperature"] == 0.125

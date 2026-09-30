@@ -6,7 +6,7 @@ import os
 from typing import Any, Mapping, Sequence
 
 
-PARSER_VERSION = "lidc_rrg_gpt6_astra_v1"
+PARSER_VERSION = "dataset_contract_rrg_gpt6_astra_v2"
 SYSTEM_PROMPT = (
     "你是放射学报告的结构化解析器。只从报告明确陈述的内容提取 4x4 网格位置和表型。"
     "只能使用给定机器可读 ID。缺失、含糊、冲突或无法映射的字段填写 null。"
@@ -84,7 +84,7 @@ def parse_rrg_report(
         text={
             "format": {
                 "type": "json_schema",
-                "name": "lidc_rrg_labels",
+                "name": "purevision_rrg_labels",
                 "schema": schema,
                 "strict": True,
             }
