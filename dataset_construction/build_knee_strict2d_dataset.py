@@ -314,7 +314,8 @@ manifest/all.jsonl 的 SHA-256；不得仅凭目录名推断来源身份。
 不是外突病灶 (extrusion lesion) 真值；lesion_mask_path 为 null。
 内侧半月板外突等级 (medial meniscus medial extrusion grade) 和形态
 (meniscal morphology) 是继承的检查级区域 MOAKS 标签，不是逐切片复核诊断。
-论文正式定位题要求病灶 mask，本数据集不能据代理 ROI 声称已复现该任务。
+评测者可将整块内侧半月板代理 ROI 约定为定位参考真值，以阳性像素
+最多的 4×4 网格作为答案；不得称其为专家逐像素外突病灶标注。
 
 full 与 crop 图像未做空间重采样。构造时先在原生切片上得到掩码，再使用相同
 裁剪坐标。manifest/all.jsonl 保留所有例，single_connected/ 仅是几何筛选，

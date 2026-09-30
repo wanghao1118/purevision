@@ -29,7 +29,9 @@ def main() -> None:
         "类别中英对照": display_catalog(contract),
         "测试样本数": len(records),
         "测试患者数": len({row["patient_id"] for row in records}),
-        "单格病灶样本数": sum(row["grounding_cell"] is not None for row in records),
+        "可定位参考样本数": sum(row["grounding_cell"] is not None for row in records),
+        "定位参考掩码角色": contract["grounding"].get("lesion_mask_role"),
+        "定位网格规则": "单格阳性筛选" if contract["grounding"].get("require_single_cell", True) else "阳性像素最多的网格；并列时按行列顺序取首格",
         "表型有效标签数": {
             dimension["id"]: dict(Counter(
                 row["phenotypes"][dimension["id"]]
@@ -37,7 +39,7 @@ def main() -> None:
             ))
             for dimension in contract["phenotypes"]
         },
-        "核查说明": "仅验证清单、患者级划分、标签映射和单格筛选；不进行模型训练或推理、mask 条件池化、监督质心评估、零样本分类，也不测量 t-SNE 簇间距离。",
+        "核查说明": "仅验证清单、患者级划分、标签映射和定位网格规则；不进行模型训练或推理、mask 条件池化、监督质心评估、零样本分类，也不测量 t-SNE 簇间距离。",
     }
     result = json.dumps(report, ensure_ascii=False, indent=2)
     if args.output:

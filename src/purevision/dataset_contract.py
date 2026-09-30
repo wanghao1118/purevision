@@ -73,6 +73,16 @@ def validate_contract(contract: Mapping[str, Any]) -> None:
         names.append(name)
     if len(set(names)) != len(names):
         raise ValueError("表型维度 ID 重复")
+    grounding = contract.get("grounding")
+    if not isinstance(grounding, dict) or type(grounding.get("grid_size")) is not int or grounding["grid_size"] < 2:
+        raise ValueError("定位网格规格无效")
+    for key in ("require_single_cell", "benchmark_grounding_eligible"):
+        if key in grounding and not isinstance(grounding[key], bool):
+            raise ValueError(f"定位规范 {key} 必须为布尔值")
+    if grounding.get("benchmark_grounding_eligible", True):
+        source = contract.get("source", {})
+        if not isinstance(source, dict) or not (source.get("lesion_mask_field") or source.get("lesion_mask_template")):
+            raise ValueError("可定位数据集缺少参考掩码字段")
 
 
 def load_contract(path: str | Path) -> dict[str, Any]:

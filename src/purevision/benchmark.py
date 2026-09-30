@@ -73,17 +73,17 @@ def mapped_label(row: Mapping[str, Any], dimension: Mapping[str, Any]) -> str | 
     return label
 
 
-def grid_cell(mask_path: Path, grid_size: int) -> str | None:
+def grid_cell(mask_path: Path, grid_size: int, require_single_cell: bool = True) -> str | None:
     with Image.open(mask_path) as opened:
         mask = np.asarray(opened.convert("L")) > 0
     if not mask.any():
         return None
     rows, cols = np.nonzero(mask)
     cells = (rows * grid_size // mask.shape[0]) * grid_size + cols * grid_size // mask.shape[1]
-    unique = np.unique(cells)
-    if len(unique) != 1:
+    counts = np.bincount(cells, minlength=grid_size * grid_size)
+    if require_single_cell and np.count_nonzero(counts) != 1:
         return None
-    index = int(unique[0])
+    index = int(counts.argmax())
     return f"r{index // grid_size + 1}c{index % grid_size + 1}"
 
 
@@ -132,9 +132,15 @@ def normalized_test_records(contract: Mapping[str, Any]) -> list[dict[str, Any]]
         if image is None or not image.is_file():
             raise FileNotFoundError(f"缺少测试图像：{sample_id}")
         if mask is not None and not mask.is_file():
-            raise FileNotFoundError(f"缺少病灶掩码：{sample_id}")
+            raise FileNotFoundError(f"缺少定位参考掩码：{sample_id}")
         eligible = contract["grounding"].get("benchmark_grounding_eligible", True)
-        cell = grid_cell(mask, int(contract["grounding"]["grid_size"])) if eligible and mask else None
+        cell = (
+            grid_cell(
+                mask, int(contract["grounding"]["grid_size"]),
+                bool(contract["grounding"].get("require_single_cell", True)),
+            )
+            if eligible and mask else None
+        )
         records.append({
             "sample_id": sample_id,
             "patient_id": patient_id,
@@ -182,9 +188,13 @@ def build_questions(
     grid_size = int(contract["grounding"]["grid_size"])
     cells = [f"r{row}c{col}" for row in range(1, grid_size + 1) for col in range(1, grid_size + 1)]
     if grounding_target and not contract["grounding"].get("benchmark_grounding_eligible", True):
-        raise ValueError("此数据集没有可验证的病灶 mask，不能生成正式 grounding 题")
+        raise ValueError("此数据集未启用定位参考掩码，不能生成 grounding 题")
     selected = _balanced_sample(records, grounding_target, lambda row: row["grounding_cell"], seed)
     counts["grounding"] = len(selected)
+    if contract["grounding"].get("require_single_cell", True):
+        grounding_question = f"将图像均分为 {grid_size}×{grid_size} 网格，病灶位于哪个单元？ / Divide the image into a {grid_size}x{grid_size} grid. Which cell contains the lesion?"
+    else:
+        grounding_question = f"将图像均分为 {grid_size}×{grid_size} 网格，参考掩码的主要区域位于哪个单元？ / Divide the image into a {grid_size}x{grid_size} grid. Which cell contains most of the reference mask?"
     for row in selected:
         answer = row["grounding_cell"]
         options = rng.sample([cell for cell in cells if cell != answer], 3) + [answer]
@@ -192,7 +202,7 @@ def build_questions(
         questions.append({
             "question_id": f"{row['sample_id']}:grounding",
             "sample_id": row["sample_id"], "task": "grounding",
-            "question_zh_en": f"将图像均分为 {grid_size}×{grid_size} 网格，病灶位于哪个单元？ / Divide the image into a {grid_size}x{grid_size} grid. Which cell contains the lesion?",
+            "question_zh_en": grounding_question,
             "answer": answer, "options": options,
             "option_display_zh_en": {
                 cell: f"第 {cell[1:cell.index('c')]} 行第 {cell[cell.index('c') + 1:]} 列 / row {cell[1:cell.index('c')]}, column {cell[cell.index('c') + 1:]}"
@@ -202,14 +212,12 @@ def build_questions(
     for offset, dimension in enumerate(contract["phenotypes"], start=1):
         name = dimension["id"]
         choices = [choice["id"] for choice in dimension["choices"]]
-        if phenotype_target and len(choices) < 4:
-            raise ValueError(f"四选一题需要至少四个候选：{name}")
         selected = _balanced_sample(records, phenotype_target, lambda row: row["phenotypes"][name], seed + offset)
         counts[name] = len(selected)
         display = {choice["id"]: choice["display_zh_en"] for choice in dimension["choices"]}
         for row in selected:
             answer = row["phenotypes"][name]
-            options = rng.sample([choice for choice in choices if choice != answer], 3) + [answer]
+            options = rng.sample([choice for choice in choices if choice != answer], min(3, len(choices) - 1)) + [answer]
             rng.shuffle(options)
             questions.append({
                 "question_id": f"{row['sample_id']}:{name}",

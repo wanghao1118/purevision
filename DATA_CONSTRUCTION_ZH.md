@@ -1,5 +1,7 @@
 # PureVision 数据构造与论文一致性核查
 
+核查说明版本：2026-09-30-v2。本次仅修订评测口径与说明，不修改既有 checkpoint、权重、原始嵌入或历史审计记录。
+
 本仓库只发布代码、构造配方和核查方法，不发布 CBIS-DDSM、LIDC-IDRI、3DReasonKnee 的原始或处理后影像、逐例清单、掩码、权重、原始嵌入或历史审计资产。新构造结果须保存在仓库外，并以 `dataset_contract.json` 随数据集交付。共享推理、报告解析和评测从该规范读取解剖与表型维度；数据集 ID 和类别 ID 保持稳定，中英显示名另存。已有 LIDC 训练脚本仍与 LIDC 专有评分空间绑定，不能把这三套数据直接替换路径后宣称完成联合训练。
 
 ## 固定来源
@@ -8,7 +10,7 @@
 |---|---|---|---|---|
 | LIDC-IDRI 肺结节 (pulmonary nodule)，`LIDC`，`lidc_purevision_r60_20260830_v1` | `/datasets/LIDC` | 医师 XML 轮廓、原始评分及物理直径；TotalSegmentator 2.18.0 解剖伪标签 | `/datasets/LIDC/pathology_encoder_r28_full_fov/splits.json`，`3a22e64c084ba3327f3e73731a366385506a2e08e609d78c47f79182984de567` | 501；单格病灶 425 |
 | CBIS-DDSM 乳腺病灶 (breast lesion)，`CBIS-DDSM`，`cbis_native_four_part_v2_20260918` | `/mnt/sda/hao/wh/datasets/CBIS-DDSM` | DICOM ROI；GrabCut 乳腺组织 (breast tissue)；Attention U-Net 胸肌 (pectoral muscle) 伪标签；CSV 肿块形态 (mass shape)、肿块边缘 (mass margins)、钙化分布 (calcification distribution) | `/datasets/cbis_ddsm/image_lesion_anatomy_text_native_v2_20260918/manifest.jsonl`，`81991e04e7a5cfc50f54614c66e2e30417c3ab2985e2813b527d42c61b5f9b62` | 540；单格 ROI 227 |
-| 3DReasonKnee 内侧半月板 (medial meniscus)，`3DReasonKnee`，`medial_meniscus_strict2d_crop128_v4` | `/datasets/3dreasonknee` | 检查级区域 MOAKS 内侧半月板外突等级 (medial meniscus medial extrusion grade)；人工优先、模型补全的解剖 bitset | `/datasets/3dreasonknee/medial_meniscus_strict2d_crop128_v4/manifest/all.jsonl`，`6fe7bc1aad69e79fa3103ba0ffaa5d832bfac2309b629fe701d4bc73343b8d51` | 1203；病灶真值 mask 为 0 |
+| 3DReasonKnee 内侧半月板 (medial meniscus)，`3DReasonKnee`，`medial_meniscus_strict2d_crop128_v4` | `/datasets/3dreasonknee` | 检查级区域 MOAKS 内侧半月板外突等级 (medial meniscus medial extrusion grade)；人工优先、模型补全的解剖 bitset；整块内侧半月板代理 ROI 用作本评测定位参考 | `/datasets/3dreasonknee/medial_meniscus_strict2d_crop128_v4/manifest/all.jsonl`，`6fe7bc1aad69e79fa3103ba0ffaa5d832bfac2309b629fe701d4bc73343b8d51` | 1203；可定位参考 1198 |
 
 以上哈希来自 2026-09-30 对服务器冻结文件的读取，非构造脚本对新输出的预设结果。路径只是来源记录，不作为数据集身份的唯一依据。每次重构都必须保存新 release、新哈希和中文记录，不能覆盖历史 checkpoint、权重、原始特征或审计文件。
 
@@ -47,7 +49,7 @@ python dataset_construction/build_knee_strict2d_dataset.py verify --output /data
 PYTHONPATH=src python scripts/build_dataset_contract.py --recipe dataset_recipes/knee.yaml --dataset-root /datasets/3dreasonknee/new_v4
 ```
 
-膝关节解剖包含股骨 (femur)、胫骨 (tibia)、髌骨 (patella)、软骨 (cartilage) 和半月板 (meniscus) 的可重叠通道。`lesion_roi_proxy` 是整块内侧半月板 (medial meniscus)，不是外突病灶真值；不得用于论文正式 grounding 标签。
+膝关节解剖包含股骨 (femur)、胫骨 (tibia)、髌骨 (patella)、软骨 (cartilage) 和半月板 (meniscus) 的可重叠通道。本评测约定将整块内侧半月板 (medial meniscus) 的 `lesion_roi_proxy` 视为定位参考真值；跨格时以阳性像素最多的网格为答案，并列按行列顺序取首格。它不是专家逐像素标注的外突病灶 (extrusion lesion) 区域，必须保留这一来源说明。
 
 ## 统一核查与评测
 
@@ -56,15 +58,18 @@ PYTHONPATH=src python scripts/validate_dataset_contract.py --dataset-contract /d
 PYTHONPATH=src python scripts/build_benchmark.py --dataset-contract /datasets/<release>/dataset_contract.json --output-dir /benchmarks/<release> --phenotype-questions 200 --grounding-questions 200 --rrg-cases 200
 ```
 
-膝关节应改用 `--phenotype-questions 100 --grounding-questions 0 --rrg-cases 183`；代码会拒绝把代理 ROI 用于正式定位题。LIDC 的二类/三类维度缺少论文原始四选一干扰项，若只构造可核验的定位与 RRG 子集，可用 `--phenotype-questions 0 --grounding-questions 200 --rrg-cases 200`；这不是论文完整 VQA。`reference.jsonl` 是 test 全集，RRG 评分须使用 `rrg_reference.jsonl`。生成的参考清单、题目和掩码都属于数据，不得加入 Git。评分用 [`scripts/score_benchmark.py`](scripts/score_benchmark.py)；GPT6-Astra 报告解析用 `scripts/parse_rrg_report.py --dataset-contract ...`，只需用户在自己的环境中设置 `OPENAI_API_KEY`。所有缺失、无效、冲突的字段按错误处理。
+膝关节使用 `--phenotype-questions 100 --grounding-questions 100 --rrg-cases 183`。2026-09-30 在 Pro60002 的冻结 v4 test 上实测：1203 例中 1198 例有可定位代理 ROI，成功生成 100 道定位题、100 道表型题和 183 个 RRG 参考病例。LIDC 使用上面的 200/200/200 参数，实测七个表型维度各 200 道；二类、三类维度按原生候选数出题，评测者也可提供自己的题目清单，评分入口按清单执行。论文原始四选一干扰项、题号和 GPT6-Astra 历史提示词未发布，因此这些新题不冒充论文原题。`reference.jsonl` 是 test 全集，RRG 评分须使用 `rrg_reference.jsonl`。生成的参考清单、题目和掩码都属于数据，不得加入 Git。评分用 [`scripts/score_benchmark.py`](scripts/score_benchmark.py)；GPT6-Astra 报告解析用 `scripts/parse_rrg_report.py --dataset-contract ...`，只需用户在自己的环境中设置 `OPENAI_API_KEY`。所有缺失、无效、冲突的字段按错误处理。
 
-## 与论文的剩余差异
+## 论文统计与数据口径
 
-1. 论文写 CBIS-DDSM 有 2543 个 test、3DReasonKnee 有 7846 个 test；冻结构造中这两个数字是**全量**样本，真实 test 分别为 540、1203。不能通过重命名划分清单解决。
-2. 论文要求三数据集评测图均有病灶 mask，并报告膝关节 100 道 grounding；现有 3DReasonKnee v4 没有独立外突病灶真值，仅有整块半月板代理 ROI。因此论文的膝关节定位结果不可由此数据严格核验。
-3. 论文没有发布二类/三类表型的四选一额外干扰项、精确采样题号、GPT6-Astra 历史提示词与输出。构造器对不足四个候选的维度主动报错，不伪造论文原题。
-4. 历史 R30 checkpoint 是修正本仓库关系损失公式以前训练的，不能因为本次改了代码便视为已按修正公式重训。LIDC 训练入口仍绑定七维目标空间；CBIS 和膝关节的完整三阶段训练尚未在此仓库统一实现。现有统一范围是数据规范、推理候选读取、报告解析、评测构造与评分。
-5. 训练图像插值与原生 MedGemma processor 路径存在差异；历史权重应按原训练预处理核验，不得无记录地切换插值再宣称精确复现。源论文没有提供足够细节来证明两个路径像素完全一致。
-6. 论文以 12120 张 LIDC 解剖切片描述数据规模，而冻结全幅病灶表型集是 2634 个病灶样本，两者并非同一统计单元。论文称膝关节覆盖五类解剖且掩码主要来自数据集提供的 nnU-Net；当前 v4 来源记录有八个可重叠通道，缺失人工通道由另一个冻结二维模型补全。除非找到论文实际使用的五类映射和掩码来源，不能说这部分已严格一致。
+论文中 CBIS-DDSM 的 2543 和 3DReasonKnee 的 7846 是全量样本数，写作时误标为 test；冻结患者级 test 分别为 540 和 1203。这是论文文字勘误，不是代码划分错误，不能通过重命名清单修改。论文的 12120 张 LIDC 解剖切片与冻结全幅病灶表型集的 2634 个病灶样本属于不同统计单元，也不是代码与论文的实现差异。
+
+膝关节论文描述五类解剖及主要来自数据集提供的 nnU-Net 掩码；当前 v4 来源记录含八个可重叠通道，缺失人工通道由另一冻结二维模型补全。这是数据构造来源和类别粒度的记录，不能仅凭数量判断共享算法写死或出错，也不能把两套掩码来源说成完全相同。实际类别及表型维度始终由构造后数据规范提供。
+
+## 代码实现范围与技术说明
+
+历史 R30 checkpoint 形成于本仓库关系损失公式修正前；修正代码不等于已用新公式重训。当前 LIDC 完整训练入口仍绑定七维目标空间，CBIS-DDSM 和 3DReasonKnee 的完整三阶段训练尚未统一实现；已统一的是数据规范、推理候选读取、报告解析、评测构造和评分。仓库不上传 checkpoint。
+
+训练图像路径采用 BICUBIC 插值，推理路径调用原生 MedGemma processor，二者存在预处理实现差异。这是上传代码内部的训练/推理核验事项，不是已证实的“代码与论文不一致”：论文未给出足以判定像素级一致性的插值细节。历史权重核验时应按其原训练路径记录预处理，不得静默切换后宣称精确复现。
 
 原始预训练权重的标准未修改推理、训练时 mask 条件池化、监督质心评估与零样本分类是不同实验，不可混称。任何 t-SNE 图仅用于二维可视化；定量距离必须在原始归一化嵌入空间另算。文中数据数量来自服务器冻结清单核查，并非论文结果表格的重算准确率。

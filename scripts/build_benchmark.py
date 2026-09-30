@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections import Counter
 from pathlib import Path
 
 from purevision.benchmark import build_questions, build_rrg_cases, normalized_test_records
@@ -59,10 +60,13 @@ def main() -> None:
         "构造规范SHA256": sha256(args.dataset_contract),
         "划分": "患者级 train/val/test；仅从 test 出题",
         "类别中英对照": display_catalog(contract),
+        "定位参考掩码角色": contract["grounding"].get("lesion_mask_role"),
+        "定位网格规则": "单格阳性筛选" if contract["grounding"].get("require_single_cell", True) else "阳性像素最多的网格；并列时按行列顺序取首格",
         "目标题数": {"grounding": args.grounding_questions, "每个表型": args.phenotype_questions, "RRG": args.rrg_cases},
         "实际题数": {**counts, "RRG": len(rrg_cases)},
+        "表型题选项数分布": dict(sorted(Counter(len(question["options"]) for question in questions if question["task"] != "grounding").items())),
         "随机种子": args.seed,
-        "方法说明": "病灶 mask 仅用于测试题参考与单格筛选，不输入模型；本阶段不运行原始预训练模型、标准未修改推理、mask 条件池化、监督质心评估或零样本分类，也不将 t-SNE 图间隙当作嵌入距离。",
+        "方法说明": "参考掩码仅用于测试题标签，不输入模型；表型题最多四个选项，二类或三类维度保留原生类别数，评测者可另行提供题目清单；本阶段不运行原始预训练模型、标准未修改推理、mask 条件池化、监督质心评估或零样本分类，也不将 t-SNE 图间隙当作嵌入距离。",
     }
     (output / "协议_ZH.json").write_text(
         json.dumps(protocol, ensure_ascii=False, indent=2), encoding="utf-8"

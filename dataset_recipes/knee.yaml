@@ -12,7 +12,7 @@ source:
   split_field: split
   image_field: image_path
   anatomy_mask_field: anatomy_mask_path
-  lesion_proxy_field: lesion_roi_proxy_path
+  lesion_mask_field: lesion_roi_proxy_path
 anatomy:
   mask_encoding: independent_channel_bitset
   lesion_labels: [medial_meniscus]
@@ -45,7 +45,7 @@ phenotypes:
         grade_3: 3 级，至少 5 毫米 / grade 3, at least 5 mm
 grounding:
   grid_size: 4
-  require_single_cell: true
-  lesion_mask_role: proxy_whole_medial_meniscus_not_extrusion
-  benchmark_grounding_eligible: false
-construction_stage_zh: 2D 单切片原生几何裁剪并保留独立解剖 bitset；不存在经过专家复核的外突病灶 mask，代理 ROI 不能用于正式 grounding。此步骤不进行标准原生模型推理、mask 条件池化、监督质心评估、零样本分类或 t-SNE 可视化。
+  require_single_cell: false
+  lesion_mask_role: whole_medial_meniscus_proxy_operational_reference
+  benchmark_grounding_eligible: true
+construction_stage_zh: 2D 单切片原生几何裁剪并保留独立解剖 bitset；整块内侧半月板代理 ROI 按本评测约定用作定位参考，以阳性像素最多的 4×4 网格为标签，并非专家逐像素复核的外突区域。此步骤不进行标准原生模型推理、mask 条件池化、监督质心评估、零样本分类或 t-SNE 可视化。

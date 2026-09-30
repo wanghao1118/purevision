@@ -64,6 +64,8 @@ def main() -> None:
         "题目清单SHA256": sha256(args.questions) if args.questions else None,
         "评测任务": args.mode,
         "类别中英对照": display_catalog(contract),
+        "定位参考掩码角色": contract["grounding"].get("lesion_mask_role"),
+        "定位网格规则": "单格阳性筛选" if contract["grounding"].get("require_single_cell", True) else "阳性像素最多的网格；并列时按行列顺序取首格",
         "评分规则": "缺失、无效和冲突预测均计为错误；定位按 4×4 单元精确匹配；VQA 表型对维度求宏平均，RRG 对每个维度先按参考类别均衡再对维度求平均。",
         "评测指标": metrics,
         "方法边界": "评分使用冻结参考，不向模型输入 mask；此记录不代表原始预训练权重的标准未修改推理、训练期 mask 条件池化、监督质心评估或零样本分类，也不以 t-SNE 间隙量化嵌入距离。",

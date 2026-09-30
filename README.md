@@ -2,7 +2,7 @@
 
 本仓库提供 PureVision 在 LIDC-IDRI 肺结节 (pulmonary nodule) 数据集上的代码实例。内容覆盖 PureEyes 的局部病灶表型训练、整图表型训练、解剖训练，以及 PureNeurons 的共享语义对齐、病灶 patch 选择、软语义融合和冻结 MedGemma 1.5 解码。它是单一数据集、单一 backbone 的实例，不包含论文另外两个数据集和其他医学 VLM 的完整实验实现。
 
-现已加入 CBIS-DDSM 乳腺病灶 (breast lesion) 与 3DReasonKnee 内侧半月板 (medial meniscus) 的数据构造配方和数据集自带类别规范。共享推理、报告解析及评测从构造后的 `dataset_contract.json` 读取解剖和表型维度，并核对对齐 checkpoint 的候选顺序；不会把三个数据集的类别写在共享推理代码里。原有完整训练仍是 LIDC 专用，不能把新的配方视为 CBIS/膝关节已完成三阶段训练。完整构造方法、服务器冻结清单哈希和论文差异见 [DATA_CONSTRUCTION_ZH.md](DATA_CONSTRUCTION_ZH.md)。
+现已加入 CBIS-DDSM 乳腺病灶 (breast lesion) 与 3DReasonKnee 内侧半月板 (medial meniscus) 的数据构造配方和数据集自带类别规范。共享推理、报告解析及评测从构造后的 `dataset_contract.json` 读取解剖和表型维度，并核对对齐 checkpoint 的候选顺序；不会把三个数据集的类别写在共享推理代码里。膝关节评测可将整块内侧半月板代理 ROI 约定为定位参考；二类/三类表型按数据自带候选数出题。原有完整训练仍是 LIDC 专用，不能把新的配方视为 CBIS/膝关节已完成三阶段训练。完整构造方法、服务器冻结清单哈希和论文统计口径见 [DATA_CONSTRUCTION_ZH.md](DATA_CONSTRUCTION_ZH.md)。
 
 仓库附带一例真实、去标识的 LIDC-IDRI 测试图像及结节 mask，可运行原生 MedGemma 1.5 与 PureVision 的配对测试。测试病例的图像、mask、冻结标签和既有生成记录位于 [`examples/lidc_case_0079/`](examples/lidc_case_0079/)。图像和 mask 供核验与离线评估；推理脚本不会把 mask 输入模型。
 
