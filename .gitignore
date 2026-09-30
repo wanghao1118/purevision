@@ -23,6 +23,7 @@ cache/
 *.nii
 *.nii.gz
 *.png
+!assets/figures/*.png
 !examples/lidc_case_0079/image.png
 !examples/lidc_case_0079/nodule_mask.png
 *.jpg

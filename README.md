@@ -1,14 +1,36 @@
-# PureVision
+# PureVision: Geometry-Supervised Visual Representation Learning for Multi-Phenotype Lesion Interpretation in Medical VLMs
 
-PureVision is a MedGemma 1.5-based baseline for medical image understanding. It trains separate phenotype and anatomy vision encoders, aligns their features with text, and generates reports with a frozen decoder.
+PureVision learns anatomy- and phenotype-aware visual representations for lesion interpretation in medical vision-language models. **PureEyes** trains the visual encoders, while **PureNeurons** selects lesion evidence and delivers it to a frozen decoder.
 
 ## Overview
 
-This repository provides a complete LIDC-IDRI pulmonary nodule training example. It also includes data construction recipes and dataset-driven evaluation tools for CBIS-DDSM and 3DReasonKnee. Anatomy and phenotype categories are read from each dataset's `dataset_contract.json`.
+This repository provides a MedGemma 1.5 implementation with a LIDC-IDRI pulmonary nodule training example. It also includes data construction recipes and dataset-driven evaluation tools for CBIS-DDSM and 3DReasonKnee. Anatomy and phenotype categories are read from each dataset's `dataset_contract.json`.
 
-Full datasets and model checkpoints are not included. A de-identified LIDC-IDRI test image and mask are provided in [`examples/lidc_case_0079/`](examples/lidc_case_0079/) for a real-case check.
+![PureVision method overview](assets/figures/method.png)
 
-<p align="center"><img src="examples/lidc_case_0079/image.png" width="320" alt="De-identified LIDC-IDRI CT test case"></p>
+*PureEyes structures anatomical and phenotypic representations; PureNeurons selects and fuses lesion-relevant evidence.*
+
+## Results
+
+The following figures are from the accompanying manuscript. The anatomy figure includes anatomy-text cosine similarities; the t-SNE panels are qualitative visualizations, not quantitative embedding-distance measurements.
+
+![Anatomy representation and anatomy-text alignment analysis](assets/figures/anatomy_analysis.png)
+
+*Anatomical representations and anatomy-text alignment on LIDC-IDRI.*
+
+![Phenotype representation analysis](assets/figures/phenotype_analysis.png)
+
+*Visualizations of nodule size, density, calcification, and spiculation representations on LIDC-IDRI.*
+
+## Qualitative Analysis
+
+![Lesion patch selection examples](assets/figures/patch_selection.png)
+
+*Examples of lesion-focused patch selection by PureNeurons.*
+
+![PureVision manuscript case study](assets/figures/case_study.png)
+
+*Manuscript case study showing the lesion mask, representation views, selected patches, and generated report. The runnable test case below is a separate example.*
 
 ## Quick Start
 
@@ -36,7 +58,7 @@ python scripts/train_alignment.py --config configs/05_alignment.yaml
 
 ## Test
 
-Check the included LIDC-IDRI case without model weights:
+The repository includes a separate de-identified LIDC-IDRI [test case](examples/lidc_case_0079/) with an image and lesion mask. Check its files without model weights:
 
 ```bash
 PYTHONPATH=src python scripts/run_real_case.py --check-only
