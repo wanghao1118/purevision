@@ -71,7 +71,3 @@ PYTHONPATH=src python scripts/run_real_case.py --config configs/07_medgemma15_re
 ```
 
 For dataset-level evaluation, use [`scripts/build_benchmark.py`](scripts/build_benchmark.py) and [`scripts/score_benchmark.py`](scripts/score_benchmark.py) with a dataset contract.
-
-## Report Parsing
-
-[`src/purevision/rrg_parser.py`](src/purevision/rrg_parser.py) provides a GPT6-Astra report parser. Set your own `OPENAI_API_KEY` and run [`scripts/parse_rrg_report.py`](scripts/parse_rrg_report.py) with a dataset contract and generated report. No API key is stored in this repository.
