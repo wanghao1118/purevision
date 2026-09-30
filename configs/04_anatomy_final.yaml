@@ -1,0 +1,101 @@
+experiment_id: PUREVISION-LIDC-ANATOMY-FINAL-PAPER
+seed: 20260826
+dataset:
+  dataset_id: LIDC
+  dataset_name_zh_en: LIDC-IDRI 肺结节数据集 / LIDC-IDRI pulmonary nodule dataset
+  release: lidc_purevision_anatomy_r39_20260823_v1
+  source_root: /datasets/LIDC
+  label_provenance_zh: TotalSegmentator 2.18.0 解剖伪标签、LIDC-IDRI 病灶轮廓与左右肺父级标签；患者级划分继承固定 splits.json。
+  split_manifest: /datasets/LIDC/pathology_encoder_r28_full_fov/splits.json
+  split_manifest_sha256: 3a22e64c084ba3327f3e73731a366385506a2e08e609d78c47f79182984de567
+  split_keys: [train, val, test]
+display_names_zh_en:
+  disease: 肺结节 / pulmonary nodule
+  anatomy:
+    outside_body: 体外 / outside body
+    left_lung: 左肺 / left lung
+    right_lung: 右肺 / right lung
+    vessel: 肺血管 / pulmonary vessel
+    heart: 心脏 / heart
+    bone: 骨 / bone
+    peripheral_soft_tissue: 外周软组织 / peripheral soft tissue
+    left_lung_pulmonary_nodule: 左肺肺结节 / left-lung pulmonary nodule
+    right_lung_pulmonary_nodule: 右肺肺结节 / right-lung pulmonary nodule
+paths:
+  model: /autodl-tmp/wh/mebe/weights/pretrained/medgemma-1.5-4b-it
+  anatomy_processed: /datasets/LIDC/anatomy_encoder_r33
+  lesion_processed: /datasets/LIDC/anatomy_lesion_r34
+  initialization_checkpoint: /autodl-tmp/wh/mebe/purevision/runs/anatomy_base/best.pt
+  output: /autodl-tmp/wh/mebe/purevision/runs/anatomy_final
+initialization:
+  source: PureVision anatomy-base checkpoint
+  model_parameters_only: true
+  checkpoint_sha256: auto_record
+  teacher_source: pretrained_medgemma_vision_tower
+  teacher_model_revision: 91850547d9f0b2fdd21aa7c5f4f3d1a8a52c243b
+  teacher_model_config_sha256: auto_record
+data:
+  image_size: 896
+  patch_size: 14
+  patches_per_slice: 4096
+  anatomy_manifest_name: metadata.csv
+  lesion_manifest_name: metadata.csv
+  anatomy_evaluation_manifest_name: metadata.csv
+  lesion_evaluation_manifest_name: metadata.csv
+  input_mode: global_full_slice
+  lesion_mask_is_input: false
+training:
+  epochs: 1
+  lesion_per_device_batch_size: 8
+  anatomy_per_device_batch_size: 8
+  gradient_accumulation_steps: 1
+  num_workers: 2
+  log_interval_steps: 25
+  checkpoint_lock_path: /tmp/r39_checkpoint_write.lock
+  learning_rate: 2.0e-06
+  weight_decay: 0.01
+  warmup_fraction: 0.05
+  max_grad_norm: 1.0
+  bf16: true
+  trainable_vision_layers: null
+  balance_lung_sides: true
+  anatomy_replay_loss_weight: 4.0
+  parent_replay_loss_weight: 0.55
+  distillation_loss_weight: 10.0
+  hierarchy_loss_weight: 4.0
+  patches_per_class_per_slice: 16
+  memory_bank_capacity: 4096
+  triplet_loss_weight: 1.0
+  pairwise_loss_weight: 1.0
+  triplet_margin: 0.2
+  ideal_gap_min: 0.05
+  triplets_per_anchor: 8
+  supervised_contrastive_loss_weight: 0.0
+  supervised_contrastive_temperature: 0.1
+  distillation_patches_per_slice: 384
+  hierarchy_patches_per_status_per_slice: 48
+  hierarchy_memory_bank_capacity: 4096
+  hierarchy_status_offset: 0.4
+  hierarchy_triplet_loss_weight: 0.5
+  hierarchy_pairwise_loss_weight: 0.25
+  hierarchy_centroid_loss_weight: 1.0
+  hierarchy_centroid_compact_weight: 0.2
+  hierarchy_minimum_status_cosine_distance: 0.5
+  hierarchy_use_global_teacher_memory: true
+  hierarchy_teacher_gap_loss_weight: 8.0
+  hierarchy_teacher_gap_margin: 0.05
+  hierarchy_contrastive_loss_weight: 1.0
+  hierarchy_contrastive_temperature: 0.1
+  hierarchy_parent_containment_loss_weight: 20.0
+  hierarchy_parent_similarity_maximum_drop: 0.0
+  hierarchy_triplet_margin: 0.12
+  hierarchy_ideal_gap_min: 0.04
+  hierarchy_triplets_per_anchor: 8
+  save_each_epoch: true
+  vessel_lung_loss_weight: 1.0
+  vessel_lung_improvement_margin: 0.01
+  vessel_lung_patches_per_class_per_slice: 48
+  vessel_parent_pair_weight: 1.0
+  vessel_anchor_contrastive_weight: 0.05
+  vessel_anchor_contrastive_temperature: 0.1
+  lesion_vessel_hard_loss_weight: 0.0

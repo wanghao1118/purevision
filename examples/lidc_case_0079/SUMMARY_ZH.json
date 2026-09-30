@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "记录类型": "LIDC-IDRI 真实病例配对测试结果",
+  "dataset_id": "LIDC",
+  "dataset_release": "lidc_purevision_r60_20260830_v1",
+  "source_root": "/datasets/LIDC",
+  "label_provenance_zh": "LIDC-IDRI 放射科医师 XML 结节轮廓及表型评分、轮廓物理直径；解剖训练标签使用 TotalSegmentator 2.18.0 伪标签。",
+  "split_manifest": "/datasets/LIDC/pathology_encoder_r28_full_fov/splits.json",
+  "split_manifest_sha256": "3a22e64c084ba3327f3e73731a366385506a2e08e609d78c47f79182984de567",
+  "sample_id": "LIDC-IDRI-0079_s3_n0",
+  "sample_split": "test",
+  "病例标签中英对照": {
+    "disease": "肺结节 / pulmonary nodule",
+    "side": "左肺 / left lung",
+    "position": "左肺上部 / left upper lung",
+    "grid_cell_4x4": "第4行第3列 / row 4 column 3",
+    "density": "实性 / solid",
+    "sphericity": "大致圆形 / mostly round",
+    "margin": "近清晰边缘 / nearly sharp margin",
+    "lobulation": "有分叶 / lobulation present",
+    "spiculation": "无毛刺 / spiculation absent",
+    "calcification": "无钙化 / calcification absent",
+    "size": "大于10毫米 / greater than 10 mm"
+  },
+  "参考4x4位置": "r4c3",
+  "病灶mask阳性像素": 211,
+  "病灶mask覆盖网格": [
+    {
+      "grid_cell": "r3c3",
+      "pixels": 66
+    },
+    {
+      "grid_cell": "r4c3",
+      "pixels": 145
+    }
+  ],
+  "符合论文单格筛选": false,
+  "流程说明": "同一真实病例先以原始 MedGemma 1.5 标准未修改推理生成，再以冻结的双视觉塔、共享对齐器、5x5/Top-8 选择、软融合及冻结 decoder 生成；不使用推理期 mask、监督质心评估、zero-shot subtype 或 t-SNE。",
+  "原生结果SHA256": "76348369ee8c42ee8de703b774cde35bd4d1dabd0bac2db21df797d8d8fc5b28",
+  "PureVision结果SHA256": "f983511a22ee8bce7973bead3cd763bab59ea394b21dd9685f8e519103232960",
+  "原始双塔特征SHA256": "76837265b8d4cd43ed3e242d5db40d06be7a4040da6640cde443e9242e713f20",
+  "说明": "病例级功能核验，不作为论文 VQA/RRG 总体指标。"
+}

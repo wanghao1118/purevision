@@ -1,0 +1,229 @@
+experiment_id: PUREVISION-LIDC-SHARED-ALIGNMENT-PAPER
+seed: 20260825
+device: cuda:0
+dataset:
+  dataset_id: LIDC
+  dataset_name_zh_en: LIDC-IDRI 肺结节数据集 / LIDC-IDRI pulmonary nodule dataset
+  release: lidc_purevision_alignment_r43_20260825_v1
+  source_root: /datasets/LIDC
+  label_provenance_zh: 解剖标签来自 TotalSegmentator 伪标签与 LIDC-IDRI 病灶左右肺标签；表型标签来自 LIDC-IDRI 医师评分；患者级划分固定于 splits.json。
+  split_manifest: /datasets/LIDC/pathology_encoder_r28_full_fov/splits.json
+  split_manifest_sha256: 3a22e64c084ba3327f3e73731a366385506a2e08e609d78c47f79182984de567
+  split_keys: [train, val, test]
+display_names_zh_en:
+  disease: 肺结节 / pulmonary nodule
+  anatomy:
+    outside_body: 体外 / outside body
+    left_lung: 左肺 / left lung
+    right_lung: 右肺 / right lung
+    vessel: 肺血管 / pulmonary vessel
+    heart: 心脏 / heart
+    bone: 骨 / bone
+    peripheral_soft_tissue: 外周软组织 / peripheral soft tissue
+    left_lung_pulmonary_nodule: 左肺肺结节 / left-lung pulmonary nodule
+    right_lung_pulmonary_nodule: 右肺肺结节 / right-lung pulmonary nodule
+  phenotypes:
+    density: 密度 / density
+    sphericity: 球形度 / sphericity
+    margin: 边缘 / margin
+    lobulation: 分叶 / lobulation
+    spiculation: 毛刺 / spiculation
+    calcification: 钙化 / calcification
+    size: 大小 / size
+
+paths:
+  model: /autodl-tmp/wh/mebe/weights/pretrained/medgemma-1.5-4b-it
+  r30_checkpoint: /autodl-tmp/wh/mebe/purevision/runs/phenotype_global/best.pt
+  r39_checkpoint: /autodl-tmp/wh/mebe/purevision/runs/anatomy_final/best.pt
+  r30_processed: /datasets/LIDC/pathology_encoder_r28_full_fov
+  r33_anatomy_processed: /datasets/LIDC/anatomy_encoder_r33
+  r34_lesion_processed: /datasets/LIDC/anatomy_lesion_r34
+  r41_anatomy_test_embedding_cache: null
+  anatomy_cache: /autodl-tmp/wh/mebe/purevision/runs/alignment_cache/anatomy
+  lesion_cache: /autodl-tmp/wh/mebe/purevision/runs/alignment_cache/lesion
+  text_target_cache: /autodl-tmp/wh/mebe/purevision/runs/alignment_cache/text_targets.pt
+  output: /autodl-tmp/wh/mebe/purevision/runs/alignment
+
+data:
+  image_size: 896
+  patch_size: 14
+  patches_per_slice: 4096
+  vision_embedding_dimension: 1152
+  normal_patch_source: R33 anatomy pseudo-label dataset with lesion exclusions where available
+  lesion_pairing_key: patient_id + scan_id + slice_index + patch_index
+  lesion_overlap_policy: drop_conflicting_attribute_targets
+  lesion_anatomy_label_map:
+    1: 7
+    2: 8
+
+cache_extraction:
+  vision_batch_size: 1
+  anatomy_patches_per_class_per_slice:
+    train: 32
+    val: 64
+    test: null
+
+r30_attribute_space:
+  kind: per_attribute_2d
+  prototype_radius: 2.0
+  within_level_scale: 0.28
+  display_jitter: 0.08
+  ordinal_cut_points:
+    density: [2.5, 4.5]
+    sphericity: [2.5, 3.5, 4.5]
+    margin: [1.5, 2.5, 3.5, 4.5]
+    lobulation: [1.5]
+    spiculation: [1.5]
+  ordinal_labels:
+    density: [non_solid_or_mostly_non_solid, mixed_or_mostly_solid, solid]
+    sphericity: [linear_or_mostly_linear, ovoid, mostly_round, round]
+    margin: [poorly_defined, near_poorly_defined, medium_margin, near_sharp, sharp]
+    lobulation: [absent, present]
+    spiculation: [absent, present]
+  size_bins_mm: [3.0, 6.0, 10.0, 30.0]
+  size_labels: [3_to_6_mm, 6_to_10_mm, greater_than_10_mm]
+  ordinal_source_fields:
+    density: texture_native_score
+    sphericity: sphericity_native_score
+    margin: margin_native_score
+    lobulation: lobulation_native_score
+    spiculation: spiculation_native_score
+  ordinal_target_mode: class_center
+  calcification_column: calcification_native_score
+  calcification_labels: [absent, present]
+  calcification_value_groups:
+    - [6]
+    - [1, 2, 3, 4, 5]
+
+text_encoder:
+  frozen: true
+  pooling: last_non_padding_token
+  batch_size: 16
+  max_length: 96
+
+align_layer:
+  source: MedGemma native multi_modal_projector
+  shared_between_encoders: true
+  spatial_pooling: false
+  operation: native RMSNorm followed by native 1152-to-text projection matrix
+  trainable: true
+
+pathology_attribute_order:
+  - density
+  - sphericity
+  - margin
+  - lobulation
+  - spiculation
+  - calcification
+  - size
+
+training:
+  epochs: 30
+  anatomy_batch_size: 1024
+  lesion_batch_size: 256
+  evaluation_batch_size: 4096
+  steps_per_epoch_source: lesion
+  num_workers: 4
+  learning_rate: 2.0e-5
+  weight_decay: 0.01
+  warmup_fraction: 0.05
+  max_grad_norm: 1.0
+  temperature: 0.07
+  matching_cosine_loss_weight: 0.2
+  class_weight: balanced
+  anatomy_class_weight_source: combined_anatomy_and_lesion
+  class_weight_multipliers:
+    anatomy:
+      vessel: 4.0
+  anatomy_loss_weight: 1.0
+  lesion_anatomy_loss_weight: 1.0
+  pathology_loss_weight: 1.0
+  pathology_attribute_weights:
+    density: 1.0
+    sphericity: 1.0
+    margin: 1.0
+    lobulation: 1.0
+    spiculation: 1.0
+    calcification: 1.0
+    size: 1.0
+  frozen_visual_encoders: true
+  selection_split: val
+  test_used_for_selection: false
+
+text_targets:
+  anatomy:
+    - label: outside_body
+      text: "Outside body"
+    - label: left_lung
+      text: "Left lung"
+    - label: right_lung
+      text: "Right lung"
+    - label: vessel
+      text: "Vessel"
+    - label: heart
+      text: "Heart"
+    - label: bone
+      text: "Bone"
+    - label: peripheral_soft_tissue
+      text: "Peripheral soft tissue"
+    - label: left_lung_pulmonary_nodule
+      text: "Left lung pulmonary nodule"
+    - label: right_lung_pulmonary_nodule
+      text: "Right lung pulmonary nodule"
+  density:
+    - label: non_solid_or_mostly_non_solid
+      text: "Non-solid or mostly non-solid"
+    - label: mixed_or_mostly_solid
+      text: "Mixed or mostly solid"
+    - label: solid
+      text: "Solid"
+  sphericity:
+    - label: linear_or_mostly_linear
+      text: "Linear or mostly linear"
+    - label: ovoid
+      text: "Ovoid"
+    - label: mostly_round
+      text: "Mostly round"
+    - label: round
+      text: "Round"
+  margin:
+    - label: poorly_defined
+      text: "Poorly defined"
+    - label: near_poorly_defined
+      text: "Nearly poorly defined"
+    - label: medium_margin
+      text: "Intermediate margin"
+    - label: near_sharp
+      text: "Nearly sharp"
+    - label: sharp
+      text: "Sharp"
+  lobulation:
+    - label: absent
+      text: "No lobulation"
+    - label: present
+      text: "Lobulation"
+  spiculation:
+    - label: absent
+      text: "No spiculation"
+    - label: present
+      text: "Spiculation"
+  calcification:
+    - label: absent
+      text: "No calcification"
+    - label: present
+      text: "Calcification"
+  size:
+    - label: 3_to_6_mm
+      text: "3 to 6 mm"
+    - label: 6_to_10_mm
+      text: "6 to 10 mm"
+    - label: greater_than_10_mm
+      text: "Greater than 10 mm"
+
+evaluation:
+  split: test
+  all_anatomy_patches: true
+  all_lesion_patch_targets: true
+  save_per_patch_cosine_matrices: true
+  report_class_conditioned_similarity: true
+  report_top1_accuracy: true

@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "purevision"
+version = "1.0.0"
+description = "Paper-faithful PureVision visual-encoder, semantic-fusion and frozen-decoder pipeline"
+readme = "README_ZH.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.26",
+  "pandas>=2.1",
+  "Pillow>=10.0",
+  "PyYAML>=6.0",
+  "safetensors>=0.4",
+  "tensorboard>=2.15",
+  "torch>=2.4",
+  "transformers>=4.51",
+]
+
+[project.optional-dependencies]
+preprocess = [
+  "pylidc>=0.2.3",
+  "scikit-image>=0.22",
+  "scipy>=1.11",
+]
+test = ["pytest>=8.0"]
+parser = ["openai>=2.0"]
+
+[project.scripts]
+purevision-train-phenotype = "purevision.train:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "scripts"]
+testpaths = ["tests"]
+addopts = "-q"

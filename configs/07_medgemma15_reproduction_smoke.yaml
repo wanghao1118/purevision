@@ -1,0 +1,105 @@
+experiment_id: EXP-LIDC-PUREVISION-MG15-BASELINE-SMOKE-20260930
+seed: 20260930
+
+dataset:
+  dataset_id: LIDC
+  dataset_name_zh_en: LIDC-IDRI 肺结节数据集 / LIDC-IDRI pulmonary nodule dataset
+  release: lidc_purevision_r60_20260830_v1
+  source_root: /datasets/LIDC
+  label_provenance_zh: 解剖标签来自 TotalSegmentator 2.18.0 伪标签与 LIDC-IDRI 病灶左右肺标签；七个表型来自 LIDC-IDRI 放射科医师评分和轮廓物理直径；患者级划分固定于 splits.json。
+  split_manifest: /datasets/LIDC/pathology_encoder_r28_full_fov/splits.json
+  split_manifest_sha256: 3a22e64c084ba3327f3e73731a366385506a2e08e609d78c47f79182984de567
+  split_keys: [train, val, test]
+
+display_names_zh_en:
+  disease: 肺结节 / pulmonary nodule
+  anatomy:
+    outside_body: 体外 / outside body
+    left_lung: 左肺 / left lung
+    right_lung: 右肺 / right lung
+    vessel: 肺血管 / pulmonary vessel
+    heart: 心脏 / heart
+    bone: 骨 / bone
+    peripheral_soft_tissue: 外周软组织 / peripheral soft tissue
+    left_lung_pulmonary_nodule: 左肺肺结节 / left-lung pulmonary nodule
+    right_lung_pulmonary_nodule: 右肺肺结节 / right-lung pulmonary nodule
+  phenotypes:
+    density: 密度 / density
+    sphericity: 球形度 / sphericity
+    margin: 边缘 / margin
+    lobulation: 分叶 / lobulation
+    spiculation: 毛刺 / spiculation
+    calcification: 钙化 / calcification
+    size: 大小 / size
+
+paths:
+  model: /root/autodl-tmp/wh/mebe/weights/pretrained/medgemma-1.5-4b-it
+  phenotype_checkpoint: /root/autodl-tmp/wh/mebe/weights/trained/runs/r30_global_attribute_training/formal_lr5e7_30e/checkpoints/window_026_030_best.pt
+  anatomy_checkpoint: /root/autodl-tmp/wh/mebe/weights/trained/runs/r39_vessel_lung/selected_r39_vessel_lung.pt
+  alignment_checkpoint: /root/autodl-tmp/wh/mebe/weights/trained/runs/r43_patch_text_alignment/selected_r43_shared_alignment.pt
+
+weights:
+  backbone_id: google/medgemma-1.5-4b-it
+  backbone_release: hf_snapshot_91850547d9f0b2fdd21aa7c5f4f3d1a8a52c243b
+  files:
+    - role: backbone_manifest
+      path: /root/autodl-tmp/wh/mebe/manifests/pretrained_files.csv
+      sha256: 9357bb8dce0756c3887fdcd55e61a2a2eafead5d74b6865e64cccda6e310cda0
+    - role: backbone_config
+      path: /root/autodl-tmp/wh/mebe/weights/pretrained/medgemma-1.5-4b-it/config.json
+      sha256: 300c724c2c1fcdea39f1e21865cb1b14a605f1e3bb5ef50550faaa48da944fc8
+    - role: backbone_index
+      path: /root/autodl-tmp/wh/mebe/weights/pretrained/medgemma-1.5-4b-it/model.safetensors.index.json
+      sha256: 77f4b67de084c31c7bcd373b039908108eee6c6181607e6d53da730e5f0bc659
+    - role: phenotype_checkpoint
+      path: /root/autodl-tmp/wh/mebe/weights/trained/runs/r30_global_attribute_training/formal_lr5e7_30e/checkpoints/window_026_030_best.pt
+      sha256: 1a98f1d86f39b7b817b13aa41afddd2816bf7f20e892925456fcc1a245557ce7
+      source_experiment_id: EXP-LIDC-MG15-4B-AS41-20260819-R30-FORMAL_LR5E7_30E
+    - role: anatomy_checkpoint
+      path: /root/autodl-tmp/wh/mebe/weights/trained/runs/r39_vessel_lung/selected_r39_vessel_lung.pt
+      sha256: c8df713fcd87f2f208bc79a187379bd6d552d0df07008587690bae584cd45f58
+      source_experiment_id: EXP-LIDC-MG15-4B-AS50-20260823-R39
+    - role: alignment_checkpoint
+      path: /root/autodl-tmp/wh/mebe/weights/trained/runs/r43_patch_text_alignment/selected_r43_shared_alignment.pt
+      sha256: 49011aedeb9f364f348ca82902a83127efc795747dcf5287f11c1afa7dcaac59
+      source_experiment_id: EXP-LIDC-MG15-4B-AS54-20260825-R43
+
+comparison_protocol:
+  native_baseline_zh_en: MedGemma 1.5 原始预训练权重标准未修改推理 / standard unmodified inference
+  purevision_method_zh_en: MedGemma 1.5 backbone 加 R30/R39/R43/R60 PureVision 主方法 / PureVision main method
+  smoke_only: true
+  full_benchmark_claim: false
+
+runtime:
+  device: cuda:0
+  dtype: bfloat16
+  attention_implementation: sdpa
+
+inference:
+  image_size: 896
+  patch_size: 14
+  grid_size: 64
+  window_size: 5
+  anchor_top_k: 2
+  selected_patches: 8
+  semantic_temperature: 0.125
+  phenotype_target_dimension: 14
+  anatomy_group: anatomy
+  lesion_anatomy_labels:
+    - left_lung_pulmonary_nodule
+    - right_lung_pulmonary_nodule
+  phenotype_groups:
+    - density
+    - sphericity
+    - margin
+    - lobulation
+    - spiculation
+    - calcification
+    - size
+  native_visual_tokens_retained: true
+  inference_masks: false
+  lora: false
+  decoder_frozen: true
+  semantic_token_placement: after_native_visual_tokens_before_task_instruction
+  candidate_sequence_padding: repeat_final_token
+  mixture_norm_rescaling: false

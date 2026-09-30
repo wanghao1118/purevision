@@ -1,0 +1,177 @@
+{
+  "schema_version": 2,
+  "记录类型": "PureVision R60 推理结果",
+  "实验编号": "EXP-LIDC-PUREVISION-MG15-BASELINE-SMOKE-20260930",
+  "dataset_id": "LIDC",
+  "dataset_release": "lidc_purevision_r60_20260830_v1",
+  "source_root": "/datasets/LIDC",
+  "label_provenance_zh": "解剖标签来自 TotalSegmentator 2.18.0 伪标签与 LIDC-IDRI 病灶左右肺标签；七个表型来自 LIDC-IDRI 放射科医师评分和轮廓物理直径；患者级划分固定于 splits.json。",
+  "split_manifest": "/datasets/LIDC/pathology_encoder_r28_full_fov/splits.json",
+  "split_manifest_sha256": "3a22e64c084ba3327f3e73731a366385506a2e08e609d78c47f79182984de567",
+  "sample_id": "LIDC-IDRI-0079_s3_n0",
+  "sample_split": "test",
+  "类别中英对照": {
+    "disease": "肺结节 / pulmonary nodule",
+    "anatomy": {
+      "outside_body": "体外 / outside body",
+      "left_lung": "左肺 / left lung",
+      "right_lung": "右肺 / right lung",
+      "vessel": "肺血管 / pulmonary vessel",
+      "heart": "心脏 / heart",
+      "bone": "骨 / bone",
+      "peripheral_soft_tissue": "外周软组织 / peripheral soft tissue",
+      "left_lung_pulmonary_nodule": "左肺肺结节 / left-lung pulmonary nodule",
+      "right_lung_pulmonary_nodule": "右肺肺结节 / right-lung pulmonary nodule"
+    },
+    "phenotypes": {
+      "density": "密度 / density",
+      "sphericity": "球形度 / sphericity",
+      "margin": "边缘 / margin",
+      "lobulation": "分叶 / lobulation",
+      "spiculation": "毛刺 / spiculation",
+      "calcification": "钙化 / calcification",
+      "size": "大小 / size"
+    }
+  },
+  "权重协议": {
+    "backbone_id": "google/medgemma-1.5-4b-it",
+    "backbone_release": "hf_snapshot_91850547d9f0b2fdd21aa7c5f4f3d1a8a52c243b",
+    "files": {
+      "backbone_manifest": {
+        "path": "/root/autodl-tmp/wh/mebe/manifests/pretrained_files.csv",
+        "sha256": "9357bb8dce0756c3887fdcd55e61a2a2eafead5d74b6865e64cccda6e310cda0"
+      },
+      "backbone_config": {
+        "path": "/root/autodl-tmp/wh/mebe/weights/pretrained/medgemma-1.5-4b-it/config.json",
+        "sha256": "300c724c2c1fcdea39f1e21865cb1b14a605f1e3bb5ef50550faaa48da944fc8"
+      },
+      "backbone_index": {
+        "path": "/root/autodl-tmp/wh/mebe/weights/pretrained/medgemma-1.5-4b-it/model.safetensors.index.json",
+        "sha256": "77f4b67de084c31c7bcd373b039908108eee6c6181607e6d53da730e5f0bc659"
+      },
+      "phenotype_checkpoint": {
+        "path": "/root/autodl-tmp/wh/mebe/weights/trained/runs/r30_global_attribute_training/formal_lr5e7_30e/checkpoints/window_026_030_best.pt",
+        "sha256": "1a98f1d86f39b7b817b13aa41afddd2816bf7f20e892925456fcc1a245557ce7",
+        "source_experiment_id": "EXP-LIDC-MG15-4B-AS41-20260819-R30-FORMAL_LR5E7_30E"
+      },
+      "anatomy_checkpoint": {
+        "path": "/root/autodl-tmp/wh/mebe/weights/trained/runs/r39_vessel_lung/selected_r39_vessel_lung.pt",
+        "sha256": "c8df713fcd87f2f208bc79a187379bd6d552d0df07008587690bae584cd45f58",
+        "source_experiment_id": "EXP-LIDC-MG15-4B-AS50-20260823-R39"
+      },
+      "alignment_checkpoint": {
+        "path": "/root/autodl-tmp/wh/mebe/weights/trained/runs/r43_patch_text_alignment/selected_r43_shared_alignment.pt",
+        "sha256": "49011aedeb9f364f348ca82902a83127efc795747dcf5287f11c1afa7dcaac59",
+        "source_experiment_id": "EXP-LIDC-MG15-4B-AS54-20260825-R43"
+      }
+    }
+  },
+  "已加载权重角色": [
+    "backbone_config",
+    "backbone_index",
+    "phenotype_checkpoint",
+    "anatomy_checkpoint",
+    "alignment_checkpoint"
+  ],
+  "流程说明_zh": "MedGemma 1.5 原始预训练权重分别初始化表型与解剖视觉塔；完整图像经已训练的独立表型视觉编码器和解剖视觉编码器提取；共享对齐器定位；5x5 局部候选内选取 8 个 patch；按病灶分数和组内标准化概率执行软语义融合；保留原始视觉 token，并在任务指令前插入融合 token；冻结 MedGemma 1.5 decoder 生成答案。该流程不是标准未修改推理、mask-conditioned pooling、监督质心评估或 hard-centroid 分类。",
+  "inference_masks_used": false,
+  "native_visual_tokens_retained": true,
+  "lora_used": false,
+  "image_path": "/root/autodl-tmp/wh/mebe/purevision/examples/lidc_case_0079/image.png",
+  "image_sha256": "705e537dbbfea91dc5bc8a7eec83b05414cf7025d63131e0f30e15c1a5296cec",
+  "instruction": "Identify the pulmonary nodule location and describe density, sphericity, margin, lobulation, spiculation, calcification, and size.",
+  "selected_patch_indices": [
+    3117,
+    3116,
+    3181,
+    3180,
+    3118,
+    3053,
+    3052,
+    3243
+  ],
+  "selected_patch_weights": [
+    0.13745057582855225,
+    0.131747767329216,
+    0.1298232525587082,
+    0.129753977060318,
+    0.12844280898571014,
+    0.12074796855449677,
+    0.1121002659201622,
+    0.10993336141109467
+  ],
+  "estimated_grid_location": {
+    "row": 48.74659729003906,
+    "column": 45.03497314453125
+  },
+  "semantic_probabilities": {
+    "anatomy": {
+      "outside_body": 2.5948148144050442e-11,
+      "left_lung": 6.501127103319959e-08,
+      "right_lung": 1.572474772615351e-08,
+      "vessel": 3.163870360367582e-06,
+      "heart": 3.403362924814246e-09,
+      "bone": 5.513939527190814e-09,
+      "peripheral_soft_tissue": 8.850812305283284e-10,
+      "left_lung_pulmonary_nodule": 0.7532884478569031,
+      "right_lung_pulmonary_nodule": 0.24670833349227905
+    },
+    "density": {
+      "non_solid_or_mostly_non_solid": 3.087655908728948e-09,
+      "mixed_or_mostly_solid": 5.903315104660578e-05,
+      "solid": 0.9999409914016724
+    },
+    "sphericity": {
+      "linear_or_mostly_linear": 1.3408801846637175e-09,
+      "ovoid": 6.101481994846836e-05,
+      "mostly_round": 0.1489161252975464,
+      "round": 0.8510229587554932
+    },
+    "margin": {
+      "poorly_defined": 2.784002750555459e-10,
+      "near_poorly_defined": 9.239137739314174e-07,
+      "medium_margin": 0.0005317695322446525,
+      "near_sharp": 0.1093127653002739,
+      "sharp": 0.8901545405387878
+    },
+    "lobulation": {
+      "absent": 0.9999998807907104,
+      "present": 1.1253516163378663e-07
+    },
+    "spiculation": {
+      "absent": 0.9999998807907104,
+      "present": 1.1253516163378663e-07
+    },
+    "calcification": {
+      "absent": 0.9999998807907104,
+      "present": 1.1253516163378663e-07
+    },
+    "size": {
+      "3_to_6_mm": 0.003280817996710539,
+      "6_to_10_mm": 0.9967191815376282,
+      "greater_than_10_mm": 5.10053910218744e-09
+    }
+  },
+  "原始特征证据": {
+    "path": "/root/autodl-tmp/wh/mebe/purevision/runs/lidc_case_0079_publication/raw_patch_embeddings.pt",
+    "sha256": "76837265b8d4cd43ed3e242d5db40d06be7a4040da6640cde443e9242e713f20",
+    "phenotype_shape": [
+      4096,
+      1152
+    ],
+    "anatomy_shape": [
+      4096,
+      1152
+    ],
+    "stage": "共享对齐器之前"
+  },
+  "generated_text": "Based on the provided image, the pulmonary nodule is located in the **left lung**.\n\nThe nodule appears to be **solid**.\n\nThe nodule is **round**.\n\nThe nodule has **sharp** margins.\n\nThe nodule is **not lobulated**.\n\nThe nodule is **not spiculated**.\n\nThe nodule **does not have calcification**.\n\nThe nodule is **6 to 10 mm** in size.",
+  "runtime": {
+    "device": "cuda:0",
+    "dtype": "bfloat16",
+    "torch": "2.11.0+cu130",
+    "transformers": "5.5.0",
+    "gpu_name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+    "peak_gpu_mib": 10084.54
+  }
+}

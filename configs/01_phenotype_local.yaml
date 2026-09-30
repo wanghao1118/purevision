@@ -1,0 +1,244 @@
+experiment_id: PUREVISION-LIDC-PHENOTYPE-LOCAL-PAPER
+seed: 20260809
+dataset:
+  dataset_id: LIDC
+  dataset_name_zh_en: LIDC-IDRI 肺结节数据集 / LIDC-IDRI pulmonary nodule dataset
+  release: lidc_purevision_r28_full_fov_20260819_v1
+  source_root: /datasets/LIDC
+  label_provenance_zh: LIDC-IDRI 放射科医师 XML 结节轮廓与表型评分；病灶直径由轮廓物理尺度计算；患者级划分固定于 splits.json。
+  split_manifest: /datasets/LIDC/pathology_encoder_r28_full_fov/splits.json
+  split_manifest_sha256: 3a22e64c084ba3327f3e73731a366385506a2e08e609d78c47f79182984de567
+  split_keys: [train, val, test]
+display_names_zh_en:
+  disease: 肺结节 / pulmonary nodule
+  phenotypes:
+    density: 密度 / density
+    sphericity: 球形度 / sphericity
+    margin: 边缘 / margin
+    lobulation: 分叶 / lobulation
+    spiculation: 毛刺 / spiculation
+    calcification: 钙化 / calcification
+    size: 大小 / size
+paths:
+  model: /autodl-tmp/wh/mebe/weights/pretrained/medgemma-1.5-4b-it
+  processed: /datasets/LIDC/pathology_encoder_r28_full_fov
+  output: /autodl-tmp/wh/mebe/purevision/runs/phenotype_local
+data:
+  image_size: 896
+  patch_size: 14
+  input_mode: lesion_patch_rectangle
+  crop_resize: false
+  position_encoding: global_patch_ids
+  lung_window_center: -600
+  lung_window_width: 1500
+  roi_margin_fraction: 0.05
+  diameter_threshold_mm: 3.0
+  train_fraction: 0.7
+  val_fraction: 0.1
+  test_fraction: 0.2
+attribute_space:
+  kind: per_attribute_2d
+  prototype_radius: 2.0
+  within_level_scale: 0.28
+  display_jitter: 0.08
+  ordinal_cut_points:
+    density:
+    - 2.5
+    - 4.5
+    sphericity:
+    - 2.5
+    - 3.5
+    - 4.5
+    margin:
+    - 1.5
+    - 2.5
+    - 3.5
+    - 4.5
+    lobulation:
+    - 1.5
+    spiculation:
+    - 1.5
+  ordinal_labels:
+    density:
+    - 'Scores 1-2: Non-solid / mostly non-solid'
+    - 'Scores 3-4: Mixed / mostly solid'
+    - 'Score 5: Solid'
+    sphericity:
+    - 'Scores 1-2: Linear / mostly linear'
+    - 'Score 3: Ovoid'
+    - 'Score 4: Mostly round'
+    - 'Score 5: Round'
+    margin:
+    - '1: Poorly Defined'
+    - '2: Near Poorly Defined'
+    - '3: Medium Margin'
+    - '4: Near Sharp'
+    - '5: Sharp'
+    lobulation:
+    - 'Score 1: Absent'
+    - 'Scores 2-5: Present'
+    spiculation:
+    - 'Score 1: Absent'
+    - 'Scores 2-5: Present'
+  size_bins_mm:
+  - 3.0
+  - 6.0
+  - 10.0
+  - 30.0
+  size_labels:
+  - (3, 6] mm
+  - (6, 10] mm
+  - '>10 mm'
+  ordinal_source_fields:
+    density: texture_native_score
+    sphericity: sphericity_native_score
+    margin: margin_native_score
+    lobulation: lobulation_native_score
+    spiculation: spiculation_native_score
+  ordinal_target_mode: class_center
+  calcification_column: calcification_native_score
+  calcification_labels:
+  - Absent (code 6)
+  - Present (codes 1-5)
+  calcification_value_groups:
+  - - 6
+  - - 1
+    - 2
+    - 3
+    - 4
+    - 5
+training:
+  epochs: 30
+  per_device_batch_size: 8
+  gradient_accumulation_steps: 1
+  num_workers: 4
+  learning_rate: 5.0e-07
+  weight_decay: 0.01
+  warmup_fraction: 0.05
+  max_grad_norm: 1.0
+  gradient_checkpointing: true
+  bf16: true
+  coordinate_loss_weight: 0.0
+  triplet_loss_weight: 1.0
+  pairwise_loss_weight: 1.0
+  prototype_compact_loss_weight: 0.0
+  prototype_margin_loss_weight: 0.0
+  coordinate_block_size: 2
+  triplet_margin: 0.2
+  ideal_gap_min: 0.05
+  triplets_per_anchor: 8
+  checkpoint_window_epochs: 5
+  last_checkpoint_interval: 30
+  memory_bank_capacity: 1024
+  auxiliary_probe:
+    enabled: false
+    learning_rate: 0.0001
+    classification_loss_weight: 0.0
+    pca_distance_loss_weight: 1.0
+    distance_margin: 0.5
+    pca_fit_split: train
+    pca_refresh_epochs: 1
+    pca_input_standardization: none
+    pca_alignment: similarity
+    dropout: 0.0
+    weight_decay: 0.01
+    first_layer_initialization: default
+    target_position_loss_weight: 0.0
+    label_smoothing: 0.0
+    geometry_updates_probe: false
+    classification_updates_encoder: false
+    classification_reduction: sum
+    probe_stabilization_epochs: 0
+    freeze_encoder_during_probe_stabilization: true
+    stabilization_advances_encoder_scheduler: false
+    checkpoint_after_stabilization_only: true
+    separate_gradient_clipping: true
+    negative_aggregation: mean
+    pca_alignment_target_mode: sample
+    pca_fit_weighting: none
+    pca_rank: 2
+    pca_niter: 4
+    contrastive_loss_weight: 0.0
+    geometry_uses_embedding: true
+    freeze_after_epoch: 0
+    target_attribute: density
+    attribute_weights:
+      density: 1.0
+      sphericity: 0.0
+      margin: 0.0
+      lobulation: 0.0
+      spiculation: 0.0
+      calcification: 0.0
+      size: 0.0
+  defer_best_checkpoint: true
+  save_last_checkpoint: false
+  random_dihedral_augmentation: false
+  scheduler_total_epochs: 30
+  attribute_relation_supervision:
+    enabled: true
+    embedding_partition: task_slices
+    tasks:
+    - target_attribute: margin
+      weight: 2.0
+      maximum_distance: 1.5
+      order_margin: 0.1
+      embedding_slice:
+      - 0
+      - 231
+    - target_attribute: calcification
+      weight: 2.0
+      maximum_distance: 1.5
+      order_margin: 0.1
+      embedding_slice:
+      - 231
+      - 462
+    - target_attribute: density
+      weight: 2.0
+      maximum_distance: 1.5
+      order_margin: 0.1
+      embedding_slice:
+      - 462
+      - 692
+    - target_attribute: sphericity
+      weight: 4.0
+      maximum_distance: 1.5
+      order_margin: 0.1
+      embedding_slice:
+      - 692
+      - 922
+    - target_attribute: size
+      weight: 3.0
+      kind: continuous
+      measurement: diameter_mm_mean
+      measurement_min: 3.205613077118839
+      measurement_max: 49.94461807109529
+      normalization_source: training_split_only
+      distance_scale: 1.5
+      embedding_slice:
+      - 922
+      - 1152
+    - target_attribute: lobulation
+      weight: 1.5
+      maximum_distance: 1.5
+      order_margin: 0.1
+      embedding_slice: shared
+    - target_attribute: spiculation
+      weight: 1.5
+      maximum_distance: 1.5
+      order_margin: 0.1
+      embedding_slice: shared
+probe:
+  input_standardization: none
+  epochs: 100
+  batch_size: 128
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  patience: 20
+  class_weight: balanced
+  activation: gelu
+  pca_fit_split: train
+  pca_display_split: val_test
+evaluation:
+  extraction_batch_size: 16
+  num_workers: 8
+  dpi: 180

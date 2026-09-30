@@ -1,0 +1,90 @@
+experiment_id: PUREVISION-LIDC-ANATOMY-BASE-PAPER
+seed: 20260820
+dataset:
+  dataset_id: LIDC
+  dataset_name_zh_en: LIDC-IDRI 肺结节数据集 / LIDC-IDRI pulmonary nodule dataset
+  release: lidc_purevision_anatomy_r33_20260820_v1
+  source_root: /datasets/LIDC
+  label_provenance_zh: TotalSegmentator 2.18.0 解剖伪标签与 LIDC-IDRI 病灶排除区域；患者级 train/val/test 划分继承固定 splits.json。
+  split_manifest: /datasets/LIDC/pathology_encoder_r28_full_fov/splits.json
+  split_manifest_sha256: 3a22e64c084ba3327f3e73731a366385506a2e08e609d78c47f79182984de567
+  split_keys: [train, val, test]
+display_names_zh_en:
+  disease: 肺结节 / pulmonary nodule
+  anatomy:
+    outside_body: 体外 / outside body
+    left_lung: 左肺 / left lung
+    right_lung: 右肺 / right lung
+    vessel: 肺血管 / pulmonary vessel
+    heart: 心脏 / heart
+    bone: 骨 / bone
+    peripheral_soft_tissue: 外周软组织 / peripheral soft tissue
+paths:
+  model: /autodl-tmp/wh/mebe/weights/pretrained/medgemma-1.5-4b-it
+  raw_dicom: /datasets/LIDC/lidc_idri
+  processed: /datasets/LIDC/anatomy_encoder_r33
+  output: /autodl-tmp/wh/mebe/purevision/runs/anatomy_base
+data:
+  image_size: 896
+  patch_size: 14
+  patches_per_slice: 4096
+  manifest_name: metadata.csv
+  input_mode: global_full_slice
+  rgb_windows:
+  - - -600.0
+    - 1500.0
+  - - 40.0
+    - 400.0
+  - - 400.0
+    - 1800.0
+  anatomy_classes:
+  - outside_body
+  - left_lung
+  - right_lung
+  - vessel
+  - heart
+  - bone
+  - peripheral_soft_tissue
+pseudo_labels:
+  tool: TotalSegmentator
+  version: 2.18.0
+  tasks:
+  - total
+  - lung_vessels
+  - body
+  total_fast_3mm: true
+  body_fast_6mm: true
+  slices_per_scan: 12
+  generation_workers: 16
+  vessel_min_patch_fraction: 0.01
+  bone_min_patch_fraction: 0.03
+  priority:
+  - vessel
+  - bone
+  - heart
+  - left_lung
+  - right_lung
+  - peripheral_soft_tissue
+  - outside_body
+training:
+  epochs: 8
+  per_device_batch_size: 1
+  gradient_accumulation_steps: 4
+  num_workers: 4
+  log_interval_steps: 50
+  learning_rate: 2.0e-06
+  weight_decay: 0.01
+  warmup_fraction: 0.05
+  max_grad_norm: 1.0
+  bf16: true
+  trainable_vision_layers: null
+  patches_per_class_per_slice: 32
+  memory_bank_capacity: 1024
+  triplet_loss_weight: 1.0
+  pairwise_loss_weight: 1.0
+  triplet_margin: 0.2
+  ideal_gap_min: 0.05
+  triplets_per_anchor: 8
+  ideal_geometry: centered_regular_simplex
+  classification_head: false
+  pathology_supervision: false
